@@ -1,0 +1,41 @@
+{
+    "trade_risk": 1,
+    "pairs": {
+      "EUR_USD": {
+        "n_ma": 9,
+        "n_std": 1.3,
+        "maxspread": 0.00018,
+        "mingain": 0.00035,
+        "riskreward": 2.5,
+        "atr_period": 8,
+        "atr_multiplier": 1.3,
+        "rsi_period": 11,
+        "rsi_overbought": 63,
+        "rsi_oversold": 37
+      },
+      "USD_JPY": {
+        "n_ma": 7,
+        "n_std": 1.7,
+        "maxspread": 0.022,
+        "mingain": 0.18,
+        "riskreward": 2.5,
+        "atr_period": 6,
+        "atr_multiplier": 1.1,
+        "rsi_period": 9,
+        "rsi_overbought": 68,
+        "rsi_oversold": 32
+      },
+      "GBP_JPY": {
+        "n_ma": 5,
+        "n_std": 2.0,
+        "maxspread": 0.028,
+        "mingain": 0.25,
+        "riskreward": 2.5,
+        "atr_period": 5,
+        "atr_multiplier": 1.4,
+        "rsi_period": 8,
+        "rsi_overbought": 70,
+        "rsi_oversold": 30
+      }
+    }
+  }
