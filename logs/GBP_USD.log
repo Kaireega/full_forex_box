@@ -1,0 +1,84 @@
+2025-01-30 03:26:12 LogWrapper init() ./logs/GBP_USD.log
+2025-01-30 03:26:12 {'pair': 'GBP_USD', 'n_ma': 20, 'n_std': 2.0, 'maxspread': 0.0003, 'mingain': 0.0015, 'riskreward': 2.0, 'atr_multiplier': 1.1, 'atr_period': 14, 'atr_threshold': 0.0004, 'rsi_period': 14, 'rsi_overbought': 72, 'rsi_oversold': 28}
+2025-01-30 03:26:13 CandleManager() init last_candle:last_candle:25-01-30 08:20 is_ready:False
+2025-01-30 03:30:15 CandleManager() new candle:last_candle:25-01-30 08:25 is_ready:True
+2025-01-30 03:30:16 tech_manager: max_rows:40 candle_time:2025-01-30 08:25:00+00:00 granularity:M5
+2025-01-30 03:30:16 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50     ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:05 AM  1.24616  1.244472  1.244333 -68.087603  75.505463  0.000336   0.000122      False         False         False  0.0  0.0  0.00019  0.002060  1.24616       0
+35  GBP_USD  03:10 AM  1.24563  1.244583  1.244384 -36.653994  65.511124  0.000377   0.000178      False         False         False  0.0  0.0  0.00020  0.001429  1.24563       0
+36  GBP_USD  03:15 AM  1.24534  1.244655  1.244421  -4.721131  60.771110  0.000383   0.000222      False         False         False  0.0  0.0  0.00017  0.001054  1.24534       0
+37  GBP_USD  03:20 AM  1.24512  1.244699  1.244449  36.803562  57.379317  0.000367   0.000253      False         False         False  0.0  0.0  0.00018  0.000758  1.24512       0
+38  GBP_USD  03:25 AM  1.24496  1.244724  1.244469  90.192375  54.976126  0.000338   0.000271      False         False         False  0.0  0.0  0.00019  0.000539  1.24496       0
+2025-01-30 03:35:20 CandleManager() new candle:last_candle:25-01-30 08:30 is_ready:True
+2025-01-30 03:35:20 tech_manager: max_rows:40 candle_time:2025-01-30 08:30:00+00:00 granularity:M5
+2025-01-30 03:35:20 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:10 AM  1.24563  1.244581  1.244374  -39.217696  65.563840  0.000377   0.000187      False         False         False  0.0  0.0  0.00020  0.001429  1.24563       0
+35  GBP_USD  03:15 AM  1.24534  1.244654  1.244412   -7.266000  60.816471  0.000383   0.000230      False         False         False  0.0  0.0  0.00017  0.001054  1.24534       0
+36  GBP_USD  03:20 AM  1.24512  1.244698  1.244440   34.403510  57.419754  0.000367   0.000260      False         False         False  0.0  0.0  0.00018  0.000758  1.24512       0
+37  GBP_USD  03:25 AM  1.24496  1.244723  1.244460   87.854549  55.013245  0.000338   0.000276      False         False         False  0.0  0.0  0.00019  0.000539  1.24496       0
+38  GBP_USD  03:30 AM  1.24484  1.244734  1.244475  157.685549  53.211965  0.000302   0.000281      False         False         False  0.0  0.0  0.00021  0.000380  1.24484       0
+2025-01-30 03:40:24 CandleManager() new candle:last_candle:25-01-30 08:35 is_ready:True
+2025-01-30 03:40:24 tech_manager: max_rows:40 candle_time:2025-01-30 08:35:00+00:00 granularity:M5
+2025-01-30 03:40:24 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:15 AM  1.24534  1.244657  1.244436   -2.808021  60.737569  0.000383   0.000240      False         False         False  0.0  0.0  0.00017  0.001054  1.24534       0
+35  GBP_USD  03:20 AM  1.24512  1.244701  1.244463   38.384717  57.338810  0.000366   0.000268      False         False         False  0.0  0.0  0.00018  0.000758  1.24512       0
+36  GBP_USD  03:25 AM  1.24496  1.244725  1.244483   91.471013  54.931317  0.000337   0.000282      False         False         False  0.0  0.0  0.00019  0.000539  1.24496       0
+37  GBP_USD  03:30 AM  1.24484  1.244736  1.244497  160.925154  53.129552  0.000301   0.000286      False         False         False  0.0  0.0  0.00021  0.000380  1.24484       0
+38  GBP_USD  03:35 AM  1.24489  1.244751  1.244512  221.515688  53.809390  0.000273   0.000284      False         False         False  0.0  0.0  0.00020  0.000382  1.24489       0
+2025-01-30 03:45:28 CandleManager() new candle:last_candle:25-01-30 08:40 is_ready:True
+2025-01-30 03:45:28 tech_manager: max_rows:40 candle_time:2025-01-30 08:40:00+00:00 granularity:M5
+2025-01-30 03:45:28 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:20 AM  1.24512  1.244703  1.244483   44.629685  57.268826  0.000366   0.000278      False         False         False  0.0  0.0  0.00018  0.000758  1.24512       0
+35  GBP_USD  03:25 AM  1.24496  1.244728  1.244502   97.157425  54.860494  0.000337   0.000291      False         False         False  0.0  0.0  0.00019  0.000539  1.24496       0
+36  GBP_USD  03:30 AM  1.24484  1.244738  1.244515  166.047824  53.058316  0.000301   0.000293      False         False         False  0.0  0.0  0.00021  0.000380  1.24484       0
+37  GBP_USD  03:35 AM  1.24489  1.244753  1.244530  225.815514  53.740207  0.000273   0.000289      False         False         False  0.0  0.0  0.00020  0.000382  1.24489       0
+38  GBP_USD  03:40 AM  1.24520  1.244795  1.244556  292.665531  57.830301  0.000272   0.000285      False         False         False  0.0  0.0  0.00021  0.000627  1.24520       0
+2025-01-30 03:50:02 CandleManager() new candle:last_candle:25-01-30 08:45 is_ready:True
+2025-01-30 03:50:02 tech_manager: max_rows:40 candle_time:2025-01-30 08:45:00+00:00 granularity:M5
+2025-01-30 03:50:02 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:25 AM  1.24496  1.244724  1.244472   91.876693  55.000112  0.000337   0.000301      False         False         False  0.0  0.0  0.00019  0.000539  1.24496       0
+35  GBP_USD  03:30 AM  1.24484  1.244735  1.244487  160.346947  53.188901  0.000301   0.000301      False         False         False  0.0  0.0  0.00021  0.000380  1.24484       0
+36  GBP_USD  03:35 AM  1.24489  1.244750  1.244502  220.005707  53.870545  0.000273   0.000295      False         False         False  0.0  0.0  0.00020  0.000382  1.24489       0
+37  GBP_USD  03:40 AM  1.24520  1.244793  1.244530  286.861506  57.958130  0.000271   0.000290      False         False         False  0.0  0.0  0.00021  0.000627  1.24520       0
+38  GBP_USD  03:45 AM  1.24596  1.244904  1.244586  336.212058  65.929062  0.000325   0.000297      False         False         False  0.0  0.0  0.00019  0.001276  1.24596       0
+2025-01-30 03:55:06 CandleManager() new candle:last_candle:25-01-30 08:50 is_ready:True
+2025-01-30 03:55:06 tech_manager: max_rows:40 candle_time:2025-01-30 08:50:00+00:00 granularity:M5
+2025-01-30 03:55:06 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:30 AM  1.24484  1.244733  1.244472  160.259494  53.259483  0.000300   0.000309      False         False         False  0.0  0.0  0.00021  0.000380  1.24484       0
+35  GBP_USD  03:35 AM  1.24489  1.244748  1.244488  219.429955  53.940989  0.000272   0.000301      False         False         False  0.0  0.0  0.00020  0.000382  1.24489       0
+36  GBP_USD  03:40 AM  1.24520  1.244791  1.244516  285.762581  58.027195  0.000270   0.000294      False         False         False  0.0  0.0  0.00021  0.000627  1.24520       0
+37  GBP_USD  03:45 AM  1.24596  1.244902  1.244573  334.674255  65.992717  0.000324   0.000301      False         False         False  0.0  0.0  0.00019  0.001276  1.24596       0
+38  GBP_USD  03:50 AM  1.24542  1.244952  1.244606  323.585763  57.624747  0.000321   0.000305      False         False         False  0.0  0.0  0.00020  0.000644  1.24542       0
+2025-01-30 04:00:10 CandleManager() new candle:last_candle:25-01-30 08:55 is_ready:True
+2025-01-30 04:00:10 tech_manager: max_rows:40 candle_time:2025-01-30 08:55:00+00:00 granularity:M5
+2025-01-30 04:00:10 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:35 AM  1.24489  1.244754  1.244533  219.429955  53.745576  0.000271   0.000307      False         False         False  0.0  0.0  0.00020  0.000382  1.24489       0
+35  GBP_USD  03:40 AM  1.24520  1.244796  1.244559  285.762581  57.864979  0.000269   0.000299      False         False         False  0.0  0.0  0.00021  0.000627  1.24520       0
+36  GBP_USD  03:45 AM  1.24596  1.244907  1.244614  334.674255  65.886306  0.000322   0.000304      False         False         False  0.0  0.0  0.00019  0.001276  1.24596       0
+37  GBP_USD  03:50 AM  1.24542  1.244956  1.244645  323.585763  57.509012  0.000319   0.000307      False         False         False  0.0  0.0  0.00020  0.000644  1.24542       0
+38  GBP_USD  03:55 AM  1.24554  1.245011  1.244680  312.756353  58.763769  0.000322   0.000310      False         False         False  0.0  0.0  0.00020  0.000668  1.24554       0
+2025-01-30 04:05:14 CandleManager() new candle:last_candle:25-01-30 09:00 is_ready:True
+2025-01-30 04:05:14 tech_manager: max_rows:40 candle_time:2025-01-30 09:00:00+00:00 granularity:M5
+2025-01-30 04:05:14 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:40 AM  1.24520  1.244802  1.244608  294.432264  57.669218  0.000269   0.000305      False         False         False  0.0  0.0  0.00021  0.000627  1.24520       0
+35  GBP_USD  03:45 AM  1.24596  1.244912  1.244661  340.938149  65.758099  0.000322   0.000308      False         False         False  0.0  0.0  0.00019  0.001276  1.24596       0
+36  GBP_USD  03:50 AM  1.24542  1.244961  1.244691  328.575555  57.369691  0.000318   0.000310      False         False         False  0.0  0.0  0.00020  0.000644  1.24542       0
+37  GBP_USD  03:55 AM  1.24554  1.245016  1.244724  316.474869  58.632568  0.000321   0.000313      False         False         False  0.0  0.0  0.00020  0.000668  1.24554       0
+38  GBP_USD  04:00 AM  1.24435  1.244952  1.244709  604.742604  44.541159  0.000229   0.000295       True         False         False  0.0  0.0  0.00018  0.000578  1.24435       0
+2025-01-30 04:10:17 CandleManager() new candle:last_candle:25-01-30 09:05 is_ready:True
+2025-01-30 04:10:18 tech_manager: max_rows:40 candle_time:2025-01-30 09:05:00+00:00 granularity:M5
+2025-01-30 04:10:18 process_candles:
+       PAIR      time    mid_c    EMA_20    EMA_50      ADX_14     RSI_14      MACD  SIGNAL_MD  ENGULFING  PIN_BAR_BULL  PIN_BAR_BEAR   SL   TP   SPREAD      GAIN     LOSS  SIGNAL
+34  GBP_USD  03:45 AM  1.24596  1.244912  1.244661  340.938149  65.758099  0.000322   0.000313      False         False         False  0.0  0.0  0.00019  0.001277  1.24596       0
+35  GBP_USD  03:50 AM  1.24542  1.244961  1.244691  328.575555  57.369691  0.000318   0.000314      False         False         False  0.0  0.0  0.00020  0.000644  1.24542       0
+36  GBP_USD  03:55 AM  1.24554  1.245016  1.244724  316.474869  58.632568  0.000321   0.000316      False         False         False  0.0  0.0  0.00020  0.000668  1.24554       0
+37  GBP_USD  04:00 AM  1.24435  1.244952  1.244709  604.742604  44.541159  0.000229   0.000297       True         False         False  0.0  0.0  0.00018  0.000578  1.24435       0
+38  GBP_USD  04:05 AM  1.24449  1.244908  1.244701  902.642370  46.179956  0.000165   0.000270      False         False         False  0.0  0.0  0.00020  0.000474  1.24449       0
