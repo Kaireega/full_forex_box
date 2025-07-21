@@ -1,0 +1,17 @@
+import React from 'react'
+import NavbarLink from './NavbarLink'
+
+function NavigationBar() {
+  return (
+    <div id="navbar">
+        <div className="navtitle">Forex Dash</div>
+        <div id="navlinks">
+            <NavbarLink path="/" text="Home"/>
+            <NavbarLink path="/dashboard" text="Dashboard"/>
+            <NavbarLink path="/CheatSheet" text="CheatSheet"/>
+        </div>
+    </div>
+  )
+}
+
+export default NavigationBar
