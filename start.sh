@@ -53,12 +53,12 @@ show_help() {
     echo "  stream        - Start data streaming only"
     echo "  all           - Start all services (server, bot, streaming)"
     echo "  openai-demo   - Run OpenAI analysis demo"
-    echo "  trading-analyzer - Start real-time trading analyzer (console)"
-    echo "  trading-web   - Start trading web dashboard"
-    echo "  trading-test  - Run trading analyzer test"
-    echo "  adaptive-analyzer - Start adaptive analyzer (profitable in all conditions)"
-    echo "  adaptive-test - Test adaptive analyzer market adaptability"
-    echo "  profitability-test - Test adaptive analyzer profitability"
+    echo "  analyzer      - Start unified trading analyzer (adaptive mode - DEFAULT)"
+    echo "  basic         - Start basic real-time analyzer"
+    echo "  comprehensive - Start comprehensive analyzer with news sentiment"
+    echo "  web           - Start unified web dashboard"
+    echo "  adaptability-test - Test market condition adaptability"
+    echo "  profitability-test - Test profitability across market conditions"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -421,40 +421,40 @@ case "${1:-help}" in
         run_openai_demo
         ;;
     
-    "trading-analyzer")
+    "analyzer")
         check_requirements
-        print_status "Starting real-time trading analyzer..."
-        python3 start_trading_analyzer.py --mode console
+        print_status "Starting unified trading analyzer (adaptive mode)..."
+        python3 start_unified_analyzer.py --mode adaptive
         ;;
     
-    "trading-web")
+    "basic")
         check_requirements
-        print_status "Starting trading web dashboard..."
-        python3 start_trading_analyzer.py --mode web
+        print_status "Starting basic real-time analyzer..."
+        python3 start_unified_analyzer.py --mode basic
         ;;
     
-    "trading-test")
+    "comprehensive")
         check_requirements
-        print_status "Running trading analyzer test..."
-        python3 start_trading_analyzer.py --mode test
+        print_status "Starting comprehensive analyzer with news sentiment..."
+        python3 start_unified_analyzer.py --mode comprehensive
         ;;
     
-    "adaptive-analyzer")
+    "web")
         check_requirements
-        print_status "Starting adaptive analyzer (profitable in all conditions)..."
-        python3 start_adaptive_analyzer.py
+        print_status "Starting unified web dashboard..."
+        python3 start_unified_analyzer.py --web
         ;;
     
-    "adaptive-test")
+    "adaptability-test")
         check_requirements
-        print_status "Testing adaptive analyzer market conditions..."
-        python3 start_adaptive_analyzer.py --test adaptability
+        print_status "Testing market condition adaptability..."
+        python3 start_unified_analyzer.py --test adaptability
         ;;
     
     "profitability-test")
         check_requirements
-        print_status "Testing adaptive analyzer profitability..."
-        python3 start_adaptive_analyzer.py --test profitability
+        print_status "Testing profitability across market conditions..."
+        python3 start_unified_analyzer.py --test profitability
         ;;
     
     "test")
