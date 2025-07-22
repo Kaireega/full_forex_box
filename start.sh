@@ -53,6 +53,12 @@ show_help() {
     echo "  stream        - Start data streaming only"
     echo "  all           - Start all services (server, bot, streaming)"
     echo "  openai-demo   - Run OpenAI analysis demo"
+    echo "  trading-analyzer - Start real-time trading analyzer (console)"
+    echo "  trading-web   - Start trading web dashboard"
+    echo "  trading-test  - Run trading analyzer test"
+    echo "  adaptive-analyzer - Start adaptive analyzer (profitable in all conditions)"
+    echo "  adaptive-test - Test adaptive analyzer market adaptability"
+    echo "  profitability-test - Test adaptive analyzer profitability"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -413,6 +419,42 @@ case "${1:-help}" in
     "openai-demo")
         check_requirements
         run_openai_demo
+        ;;
+    
+    "trading-analyzer")
+        check_requirements
+        print_status "Starting real-time trading analyzer..."
+        python3 start_trading_analyzer.py --mode console
+        ;;
+    
+    "trading-web")
+        check_requirements
+        print_status "Starting trading web dashboard..."
+        python3 start_trading_analyzer.py --mode web
+        ;;
+    
+    "trading-test")
+        check_requirements
+        print_status "Running trading analyzer test..."
+        python3 start_trading_analyzer.py --mode test
+        ;;
+    
+    "adaptive-analyzer")
+        check_requirements
+        print_status "Starting adaptive analyzer (profitable in all conditions)..."
+        python3 start_adaptive_analyzer.py
+        ;;
+    
+    "adaptive-test")
+        check_requirements
+        print_status "Testing adaptive analyzer market conditions..."
+        python3 start_adaptive_analyzer.py --test adaptability
+        ;;
+    
+    "profitability-test")
+        check_requirements
+        print_status "Testing adaptive analyzer profitability..."
+        python3 start_adaptive_analyzer.py --test profitability
         ;;
     
     "test")
