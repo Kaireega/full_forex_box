@@ -53,6 +53,9 @@ show_help() {
     echo "  stream        - Start data streaming only"
     echo "  all           - Start all services (server, bot, streaming)"
     echo "  openai-demo   - Run OpenAI analysis demo"
+    echo "  trading-analyzer - Start real-time trading analyzer (console)"
+    echo "  trading-web   - Start trading web dashboard"
+    echo "  trading-test  - Run trading analyzer test"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -413,6 +416,24 @@ case "${1:-help}" in
     "openai-demo")
         check_requirements
         run_openai_demo
+        ;;
+    
+    "trading-analyzer")
+        check_requirements
+        print_status "Starting real-time trading analyzer..."
+        python3 start_trading_analyzer.py --mode console
+        ;;
+    
+    "trading-web")
+        check_requirements
+        print_status "Starting trading web dashboard..."
+        python3 start_trading_analyzer.py --mode web
+        ;;
+    
+    "trading-test")
+        check_requirements
+        print_status "Running trading analyzer test..."
+        python3 start_trading_analyzer.py --mode test
         ;;
     
     "test")
