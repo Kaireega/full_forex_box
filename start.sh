@@ -64,6 +64,7 @@ show_help() {
     echo "  stream-bot-only - Start stream_bot-only trading (technical analysis)"
     echo "  analysis-only - Start analysis-only trading (AI-powered only)"
     echo "  web-dashboard - Start web dashboard server"
+    echo "  modern        - Start modern services (unified system + web dashboard)"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -73,9 +74,10 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  ./start.sh setup         # Full system setup"
-    echo "  ./start.sh all           # Start all services"
+    echo "  ./start.sh modern        # Start modern services (recommended)"
+    echo "  ./start.sh all           # Start all services (legacy + modern)"
     echo "  ./start.sh unified       # Start unified trading system"
-    echo "  ./start.sh hybrid        # Start hybrid trading mode"
+    echo "  ./start.sh web-dashboard # Start web dashboard"
     echo "  ./start.sh check         # Check system status"
     echo ""
 }
@@ -704,7 +706,10 @@ case "${1:-help}" in
         start_server
         start_bot
         start_streaming
+        start_web_dashboard
         print_status "All services started! Press Ctrl+C to stop all services"
+        print_status "Web Dashboard: http://localhost:5001"
+        print_status "Legacy Server: http://localhost:5000"
         
         # Set up signal handler to stop services on Ctrl+C
         trap 'stop_services; exit 0' INT TERM
@@ -748,6 +753,23 @@ case "${1:-help}" in
         start_web_dashboard
         print_status "Press Ctrl+C to stop the web dashboard server"
         wait
+        ;;
+    
+    "modern")
+        print_header "🚀 Starting Modern Services (Unified System + Web Dashboard)"
+        check_requirements
+        start_unified_trading
+        start_web_dashboard
+        print_status "Modern services started! Press Ctrl+C to stop all services"
+        print_status "Web Dashboard: http://localhost:5001"
+        
+        # Set up signal handler to stop services on Ctrl+C
+        trap 'stop_services; exit 0' INT TERM
+        
+        # Keep script running
+        while true; do
+            sleep 1
+        done
         ;;
     
     "analysis-only")

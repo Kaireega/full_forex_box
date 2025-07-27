@@ -1,3 +1,2 @@
-2025-07-27 01:12:27 LogWrapper init() ./logs/WorkProcessor.log
-2025-07-27 01:12:29 New Work: LiveApiPrice() EUR_USD 1.17437 1.17397 2025-07-25 20:59:05.202480+00:00
-2025-07-27 01:12:36 New Work: LiveApiPrice() GBP_JPY 198.498 198.363 2025-07-25 20:59:05.212024+00:00
+2025-07-27 03:50:19 LogWrapper init() ./logs/WorkProcessor.log
+2025-07-27 03:50:21 New Work: LiveApiPrice() EUR_USD 1.17437 1.17397 2025-07-25 20:59:05.202480+00:00
