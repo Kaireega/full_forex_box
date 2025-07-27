@@ -1,4 +1,0 @@
-2025-07-27 03:50:19 LogWrapper init() ./logs/PriceProcessor_EUR_USD.log
-2025-07-27 03:50:19 Found price : LiveApiPrice() EUR_USD 1.17437 1.17397 2025-07-25 20:59:05.202480+00:00
-2025-07-27 03:50:21 Done processing price : LiveApiPrice() EUR_USD 1.17437 1.17397 2025-07-25 20:59:05.202480+00:00
-2025-07-27 03:50:21 Adding work : LiveApiPrice() EUR_USD 1.17437 1.17397 2025-07-25 20:59:05.202480+00:00

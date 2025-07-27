@@ -1,3 +1,0 @@
-2025-07-27 03:50:19 LogWrapper init() ./logs/PriceProcessor_GBP_JPY.log
-2025-07-27 03:50:19 Found price : LiveApiPrice() GBP_JPY 198.498 198.363 2025-07-25 20:59:05.212024+00:00
-2025-07-27 03:50:21 Done processing price : LiveApiPrice() GBP_JPY 198.498 198.363 2025-07-25 20:59:05.212024+00:00

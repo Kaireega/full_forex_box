@@ -1,3 +1,0 @@
-2025-07-27 03:50:19 LogWrapper init() ./logs/PriceProcessor_USD_JPY.log
-2025-07-27 03:50:19 Found price : LiveApiPrice() USD_JPY 147.682 147.655 2025-07-25 20:59:05.238564+00:00
-2025-07-27 03:50:22 Done processing price : LiveApiPrice() USD_JPY 147.682 147.655 2025-07-25 20:59:05.238564+00:00
