@@ -95,6 +95,10 @@ def start_system():
         trading_mode = get_trading_mode(data.get('tradingMode', 'hybrid'))
         analysis_mode = get_analysis_mode(data.get('analysisMode', 'adaptive'))
         
+        print(f"🚀 Starting unified trading system...")
+        print(f"📊 Mode: {trading_mode.value}")
+        print(f"🤖 Analysis Mode: {analysis_mode.value}")
+        
         # Initialize trading system
         trading_system = UnifiedTradingSystem(
             mode=trading_mode,
@@ -110,7 +114,14 @@ def start_system():
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error starting system: {error_details}")
+        return jsonify({
+            'success': False, 
+            'error': f'Failed to start system: {str(e)}',
+            'details': error_details
+        })
 
 @app.route('/api/stop', methods=['POST'])
 def stop_system():

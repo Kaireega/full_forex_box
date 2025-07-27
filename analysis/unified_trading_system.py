@@ -33,9 +33,48 @@ try:
     from analysis.unified_trading_analyzer import UnifiedTradingAnalyzer, AnalysisMode, TradingSignal
     from analysis.realtime_trading_analyzer import RealtimeTradingAnalyzer
     ANALYSIS_AVAILABLE = True
-except ImportError:
+    print("✅ Analysis classes imported successfully")
+except ImportError as e:
     ANALYSIS_AVAILABLE = False
-    print("⚠️  Analysis classes not available - running in stream_bot-only mode")
+    print(f"⚠️  Analysis classes not available - running in stream_bot-only mode")
+    print(f"   Import error: {e}")
+    
+    # Create dummy classes for when analysis is not available
+    class AnalysisMode(Enum):
+        BASIC = "basic"
+        ADAPTIVE = "adaptive"
+        COMPREHENSIVE = "comprehensive"
+    
+    class TradingSignal:
+        def __init__(self, **kwargs):
+            self.currency_pair = kwargs.get('currency_pair', '')
+            self.signal_type = kwargs.get('signal_type', 'HOLD')
+            self.confidence = kwargs.get('confidence', 0.0)
+            self.entry_price = kwargs.get('entry_price', 0.0)
+            self.stop_loss = kwargs.get('stop_loss', 0.0)
+            self.take_profit = kwargs.get('take_profit', 0.0)
+            self.reasoning = kwargs.get('reasoning', '')
+            self.risk_level = kwargs.get('risk_level', 'MEDIUM')
+    
+    class UnifiedTradingAnalyzer:
+        def __init__(self, **kwargs):
+            self.signals_history = []
+        
+        def start_analysis(self, pairs):
+            print("⚠️  UnifiedTradingAnalyzer not available - using dummy implementation")
+        
+        def stop_analysis(self):
+            pass
+    
+    class RealtimeTradingAnalyzer:
+        def __init__(self, **kwargs):
+            self.signals_history = []
+        
+        def start_realtime_analysis(self, pairs):
+            print("⚠️  RealtimeTradingAnalyzer not available - using dummy implementation")
+        
+        def stop_realtime_analysis(self):
+            pass
 
 from api.oanda_api import OandaApi
 from models.trade_decision import TradeDecision
@@ -107,11 +146,20 @@ class UnifiedTradingSystem:
         # Analysis components (if available)
         self.analysis_available = ANALYSIS_AVAILABLE
         if self.analysis_available:
-            self.unified_analyzer = UnifiedTradingAnalyzer(
-                update_interval=300,  # 5 minutes
-                mode=analysis_mode
-            )
-            self.realtime_analyzer = RealtimeTradingAnalyzer(update_interval=60)
+            try:
+                self.unified_analyzer = UnifiedTradingAnalyzer(
+                    update_interval=300,  # 5 minutes
+                    mode=analysis_mode
+                )
+                self.realtime_analyzer = RealtimeTradingAnalyzer(update_interval=60)
+                print("✅ Analysis components initialized")
+            except Exception as e:
+                print(f"⚠️  Error initializing analysis components: {e}")
+                self.analysis_available = False
+        else:
+            # Create dummy analyzers
+            self.unified_analyzer = UnifiedTradingAnalyzer()
+            self.realtime_analyzer = RealtimeTradingAnalyzer()
         
         # Trading parameters
         self.currency_pairs = tradeSettingsCollection.pair_list()
@@ -138,8 +186,28 @@ class UnifiedTradingSystem:
     
     def load_stream_bot_settings(self):
         """Load stream_bot settings."""
-        tradeSettingsCollection.load_trade_settings()
-        tradeSettingsCollection.print_collection()
+        try:
+            # Get the absolute path to the project root
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            
+            # Temporarily change the working directory to project root
+            original_cwd = os.getcwd()
+            os.chdir(project_root)
+            
+            # Load settings
+            tradeSettingsCollection.load_trade_settings()
+            tradeSettingsCollection.print_collection()
+            
+            # Restore original working directory
+            os.chdir(original_cwd)
+            
+        except Exception as e:
+            print(f"❌ Error loading stream_bot settings: {e}")
+            print(f"Current directory: {os.getcwd()}")
+            print(f"Looking for: {os.path.join(project_root, 'stream_bot', 'settings.json')}")
+            raise
     
     def start_trading(self):
         """Start the unified trading system."""
