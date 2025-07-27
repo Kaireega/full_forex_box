@@ -112,5 +112,43 @@
     "profit_probability": 0.9482716166225996,
     "alternative_entry": 1.3432,
     "trailing_stop": 1.3445
+  },
+  {
+    "timestamp": "2025-07-27T19:05:47.547676",
+    "currency_pair": "USD_JPY",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 147.74,
+    "stop_loss": 147.68,
+    "take_profit": 147.85,
+    "reasoning": "The USD/JPY is in a strong uptrend with maximum trend strength (1.00) and strong support (0.99). Momentum is positive at 0.66, and breakout probability is favorable at 0.60, indicating continuation potential. Multi-timeframe RSI values show slight short-term pullback on M1 (RSI 32.8) but overall bullish momentum on M5 and H1. The price is slightly below short-term SMAs on M1, suggesting a good pullback entry near 147.740. Tight stop loss below recent support at 147.680 limits risk. Take profit is set to capture momentum continuation near resistance at 147.850. Trailing stops should be used to lock in profits as price advances.",
+    "risk_level": "MEDIUM",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 1.0141149937875775,
+    "time_horizon": "medium",
+    "profit_probability": 0.7478415630248877,
+    "alternative_entry": 147.765,
+    "trailing_stop": 147.76
+  },
+  {
+    "timestamp": "2025-07-27T19:05:52.867967",
+    "currency_pair": "GBP_USD",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 1.3436,
+    "stop_loss": 1.3429,
+    "take_profit": 1.3465,
+    "reasoning": "The GBP/USD is in a strong uptrend with a trend strength of 0.80 and a high breakout probability of 0.80, indicating momentum continuation. The current price is slightly above short-term SMAs on M1, confirming immediate bullish momentum. Although the M5 and H1 RSI are lower, the strong support strength (0.97) and resistance strength (1.00) suggest a solid base for upward movement. The volatility is low, allowing for tight stops. A pullback entry near 1.34360 offers a good risk/reward ratio. Stop loss is set just below recent support to limit downside risk, while take profit targets the next resistance area around 1.34650. Trailing stops should be used aggressively once the trade moves in favor to lock in profits.",
+    "risk_level": "MEDIUM",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 0.9188422386949234,
+    "time_horizon": "medium",
+    "profit_probability": 0.95,
+    "alternative_entry": 1.3434,
+    "trailing_stop": 1.3445
   }
 ]

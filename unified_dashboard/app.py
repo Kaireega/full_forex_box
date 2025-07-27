@@ -325,7 +325,14 @@ def technicals(pair, tf):
 
 @app.route("/api/prices/<pair>/<granularity>/<count>")
 def prices(pair, granularity, count):
-    return get_response(OandaApi().web_api_candles(pair, granularity, count))
+    try:
+        print(f"Fetching prices for {pair}, {granularity}, {count}")
+        data = OandaApi().web_api_candles(pair, granularity, count)
+        print(f"Price data received: {data}")
+        return get_response(data)
+    except Exception as e:
+        print(f"Error fetching prices: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/te/calendar/<start>/<end>")
 def te_calendar(start, end):
