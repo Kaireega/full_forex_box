@@ -1,0 +1,84 @@
+{
+    "trade_risk": 0.5,
+    "intraday_config": {
+        "max_daily_trades": 10,
+        "max_concurrent_trades": 3,
+        "session_filter": "london_ny",
+        "min_signal_strength": 0.6,
+        "auto_close_end_of_day": true,
+        "trailing_stop_enabled": true,
+        "trailing_stop_distance": 1.5
+    },
+    "pairs": {
+        "EUR_USD": {
+            "n_ma": 5,
+            "n_std": 1.2,
+            "maxspread": 0.00015,
+            "mingain": 0.00025,
+            "riskreward": 2.0,
+            "atr_period": 5,
+            "atr_multiplier": 1.0,
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30,
+            "min_volume": 1000,
+            "max_daily_loss": 0.02
+        },
+        "GBP_USD": {
+            "n_ma": 5,
+            "n_std": 1.4,
+            "maxspread": 0.00018,
+            "mingain": 0.00030,
+            "riskreward": 2.0,
+            "atr_period": 5,
+            "atr_multiplier": 1.1,
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30,
+            "min_volume": 1000,
+            "max_daily_loss": 0.02
+        },
+        "USD_JPY": {
+            "n_ma": 5,
+            "n_std": 1.6,
+            "maxspread": 0.020,
+            "mingain": 0.15,
+            "riskreward": 2.0,
+            "atr_period": 5,
+            "atr_multiplier": 1.0,
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30,
+            "min_volume": 1000,
+            "max_daily_loss": 0.02
+        },
+        "USD_CHF": {
+            "n_ma": 5,
+            "n_std": 1.3,
+            "maxspread": 0.00020,
+            "mingain": 0.00035,
+            "riskreward": 2.0,
+            "atr_period": 5,
+            "atr_multiplier": 1.0,
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30,
+            "min_volume": 1000,
+            "max_daily_loss": 0.02
+        },
+        "AUD_USD": {
+            "n_ma": 5,
+            "n_std": 1.5,
+            "maxspread": 0.00022,
+            "mingain": 0.00040,
+            "riskreward": 2.0,
+            "atr_period": 5,
+            "atr_multiplier": 1.1,
+            "rsi_period": 9,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30,
+            "min_volume": 1000,
+            "max_daily_loss": 0.02
+        }
+    }
+}
