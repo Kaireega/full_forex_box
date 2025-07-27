@@ -58,6 +58,11 @@ show_help() {
     echo "  web           - Start unified web dashboard"
     echo "  adaptability-test - Test market condition adaptability"
     echo "  profitability-test - Test profitability across market conditions"
+    echo "  unified       - Start unified trading system (bot + analysis integration)"
+    echo "  hybrid        - Start hybrid trading (bot + AI analysis)"
+    echo "  ai-enhanced   - Start AI-enhanced trading (AI-first with bot backup)"
+    echo "  bot-only      - Start bot-only trading (original technical analysis)"
+    echo "  analysis-only - Start analysis-only trading (AI-powered only)"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -68,7 +73,8 @@ show_help() {
     echo "Examples:"
     echo "  ./start.sh setup         # Full system setup"
     echo "  ./start.sh all           # Start all services"
-    echo "  ./start.sh server        # Start web server only"
+    echo "  ./start.sh unified       # Start unified trading system"
+    echo "  ./start.sh hybrid        # Start hybrid trading mode"
     echo "  ./start.sh check         # Check system status"
     echo ""
 }
@@ -207,6 +213,126 @@ run_streamer()
     fi
 }
 
+# Function to start unified trading system
+start_unified_trading() {
+    print_status "Starting unified trading system..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode hybrid &
+    UNIFIED_PID=$!
+    echo $UNIFIED_PID > .unified.pid
+    
+    # Wait a moment and check if unified system started
+    sleep 2
+    if kill -0 $UNIFIED_PID 2>/dev/null; then
+        print_status "Unified trading system started successfully (PID: $UNIFIED_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start unified trading system"
+        return 1
+    fi
+}
+
+# Function to start hybrid trading
+start_hybrid_trading() {
+    print_status "Starting hybrid trading (bot + AI analysis)..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode hybrid --analysis-mode adaptive &
+    HYBRID_PID=$!
+    echo $HYBRID_PID > .hybrid.pid
+    
+    # Wait a moment and check if hybrid system started
+    sleep 2
+    if kill -0 $HYBRID_PID 2>/dev/null; then
+        print_status "Hybrid trading system started successfully (PID: $HYBRID_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start hybrid trading system"
+        return 1
+    fi
+}
+
+# Function to start AI-enhanced trading
+start_ai_enhanced_trading() {
+    print_status "Starting AI-enhanced trading (AI-first with bot backup)..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode ai_enhanced --analysis-mode comprehensive &
+    AI_ENHANCED_PID=$!
+    echo $AI_ENHANCED_PID > .ai_enhanced.pid
+    
+    # Wait a moment and check if AI-enhanced system started
+    sleep 2
+    if kill -0 $AI_ENHANCED_PID 2>/dev/null; then
+        print_status "AI-enhanced trading system started successfully (PID: $AI_ENHANCED_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start AI-enhanced trading system"
+        return 1
+    fi
+}
+
+# Function to start bot-only trading
+start_bot_only_trading() {
+    print_status "Starting bot-only trading (original technical analysis)..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode bot_only &
+    BOT_ONLY_PID=$!
+    echo $BOT_ONLY_PID > .bot_only.pid
+    
+    # Wait a moment and check if bot-only system started
+    sleep 2
+    if kill -0 $BOT_ONLY_PID 2>/dev/null; then
+        print_status "Bot-only trading system started successfully (PID: $BOT_ONLY_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start bot-only trading system"
+        return 1
+    fi
+}
+
+# Function to start analysis-only trading
+start_analysis_only_trading() {
+    print_status "Starting analysis-only trading (AI-powered only)..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode analysis_only --analysis-mode adaptive &
+    ANALYSIS_ONLY_PID=$!
+    echo $ANALYSIS_ONLY_PID > .analysis_only.pid
+    
+    # Wait a moment and check if analysis-only system started
+    sleep 2
+    if kill -0 $ANALYSIS_ONLY_PID 2>/dev/null; then
+        print_status "Analysis-only trading system started successfully (PID: $ANALYSIS_ONLY_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start analysis-only trading system"
+        return 1
+    fi
+}
+
 # Function to stop all services
 stop_services() {
     print_status "Stopping all services..."
@@ -241,10 +367,61 @@ stop_services() {
         rm -f .stream.pid
     fi
     
+    # Stop unified trading system
+    if [ -f ".unified.pid" ]; then
+        UNIFIED_PID=$(cat .unified.pid)
+        if kill -0 $UNIFIED_PID 2>/dev/null; then
+            kill $UNIFIED_PID
+            print_status "Unified trading system stopped"
+        fi
+        rm -f .unified.pid
+    fi
+    
+    # Stop hybrid trading system
+    if [ -f ".hybrid.pid" ]; then
+        HYBRID_PID=$(cat .hybrid.pid)
+        if kill -0 $HYBRID_PID 2>/dev/null; then
+            kill $HYBRID_PID
+            print_status "Hybrid trading system stopped"
+        fi
+        rm -f .hybrid.pid
+    fi
+    
+    # Stop AI-enhanced trading system
+    if [ -f ".ai_enhanced.pid" ]; then
+        AI_ENHANCED_PID=$(cat .ai_enhanced.pid)
+        if kill -0 $AI_ENHANCED_PID 2>/dev/null; then
+            kill $AI_ENHANCED_PID
+            print_status "AI-enhanced trading system stopped"
+        fi
+        rm -f .ai_enhanced.pid
+    fi
+    
+    # Stop bot-only trading system
+    if [ -f ".bot_only.pid" ]; then
+        BOT_ONLY_PID=$(cat .bot_only.pid)
+        if kill -0 $BOT_ONLY_PID 2>/dev/null; then
+            kill $BOT_ONLY_PID
+            print_status "Bot-only trading system stopped"
+        fi
+        rm -f .bot_only.pid
+    fi
+    
+    # Stop analysis-only trading system
+    if [ -f ".analysis_only.pid" ]; then
+        ANALYSIS_ONLY_PID=$(cat .analysis_only.pid)
+        if kill -0 $ANALYSIS_ONLY_PID 2>/dev/null; then
+            kill $ANALYSIS_ONLY_PID
+            print_status "Analysis-only trading system stopped"
+        fi
+        rm -f .analysis_only.pid
+    fi
+    
     # Kill any remaining Python processes that might be related
     pkill -f "server.py" 2>/dev/null || true
     pkill -f "run_bot.py" 2>/dev/null || true
     pkill -f "streamer" 2>/dev/null || true
+    pkill -f "unified_trading_system.py" 2>/dev/null || true
     
     print_status "All services stopped ✅"
 }
@@ -285,6 +462,45 @@ check_status() {
         fi
     else
         print_warning "Data Streaming: Not running ❌"
+    fi
+    
+    # Check unified trading system
+    if [ -f ".unified.pid" ]; then
+        UNIFIED_PID=$(cat .unified.pid)
+        if kill -0 $UNIFIED_PID 2>/dev/null; then
+            print_status "Unified Trading System: Running (PID: $UNIFIED_PID) ✅"
+        else
+            print_warning "Unified Trading System: Not running ❌"
+            rm -f .unified.pid
+        fi
+    else
+        print_warning "Unified Trading System: Not running ❌"
+    fi
+    
+    # Check hybrid trading system
+    if [ -f ".hybrid.pid" ]; then
+        HYBRID_PID=$(cat .hybrid.pid)
+        if kill -0 $HYBRID_PID 2>/dev/null; then
+            print_status "Hybrid Trading System: Running (PID: $HYBRID_PID) ✅"
+        else
+            print_warning "Hybrid Trading System: Not running ❌"
+            rm -f .hybrid.pid
+        fi
+    else
+        print_warning "Hybrid Trading System: Not running ❌"
+    fi
+    
+    # Check AI-enhanced trading system
+    if [ -f ".ai_enhanced.pid" ]; then
+        AI_ENHANCED_PID=$(cat .ai_enhanced.pid)
+        if kill -0 $AI_ENHANCED_PID 2>/dev/null; then
+            print_status "AI-Enhanced Trading System: Running (PID: $AI_ENHANCED_PID) ✅"
+        else
+            print_warning "AI-Enhanced Trading System: Not running ❌"
+            rm -f .ai_enhanced.pid
+        fi
+    else
+        print_warning "AI-Enhanced Trading System: Not running ❌"
     fi
     
     # Check environment variables
@@ -342,28 +558,25 @@ run_openai_demo() {
 run_tests() {
     print_status "Running test suite..."
     
-    # Run OpenAI tests if available
     if [ -f "test_openai_analysis.py" ]; then
         print_status "Running OpenAI analysis tests..."
         python3 test_openai_analysis.py
     fi
     
-    # Run API tests if available
     if [ -f "api_tests.py" ]; then
         print_status "Running API tests..."
         python3 api_tests.py
     fi
     
-    # Run scraping tests if available
     if [ -f "scraping_tests.py" ]; then
         print_status "Running scraping tests..."
         python3 scraping_tests.py
     fi
     
-    print_status "Test suite completed ✅"
+    print_status "Test suite completed"
 }
 
-# Main script logic
+# Main command handling
 case "${1:-help}" in
     "setup")
         print_header "🚀 Full System Setup"
@@ -413,6 +626,41 @@ case "${1:-help}" in
         while true; do
             sleep 1
         done
+        ;;
+    
+    "unified")
+        check_requirements
+        start_unified_trading
+        print_status "Press Ctrl+C to stop the unified trading system"
+        wait
+        ;;
+    
+    "hybrid")
+        check_requirements
+        start_hybrid_trading
+        print_status "Press Ctrl+C to stop the hybrid trading system"
+        wait
+        ;;
+    
+    "ai-enhanced")
+        check_requirements
+        start_ai_enhanced_trading
+        print_status "Press Ctrl+C to stop the AI-enhanced trading system"
+        wait
+        ;;
+    
+    "bot-only")
+        check_requirements
+        start_bot_only_trading
+        print_status "Press Ctrl+C to stop the bot-only trading system"
+        wait
+        ;;
+    
+    "analysis-only")
+        check_requirements
+        start_analysis_only_trading
+        print_status "Press Ctrl+C to stop the analysis-only trading system"
+        wait
         ;;
     
     "openai-demo")
