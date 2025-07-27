@@ -86,11 +86,11 @@ def check_api_credentials():
         api = OandaApi()
         account = api.get_account_summary()
         
-        if account and 'account' in account:
+        if account and 'id' in account:
             print("  ✅ OANDA API credentials configured")
-            print(f"     Account: {account['account']['id']}")
-            print(f"     Currency: {account['account']['currency']}")
-            print(f"     Balance: {account['account']['balance']}")
+            print(f"     Account: {account['id']}")
+            print(f"     Currency: {account['currency']}")
+            print(f"     Balance: {account['balance']}")
         else:
             print("  ❌ OANDA API credentials not configured or invalid")
             return False
