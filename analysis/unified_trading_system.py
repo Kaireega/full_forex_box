@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unified Trading System - Integrates Bot with Analysis Classes
+Unified Trading System - Integrates Stream Bot with Analysis Classes
 
-This system combines your existing trading bot with analysis classes
+This system combines your stream_bot with analysis classes
 to place trades based on both technical signals and AI analysis.
 """
 
@@ -15,18 +15,18 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from queue import Queue
 
 # Add project root to path
 sys.path.append("./")
 
-from bot.bot import Bot
-from bot.technicals_manager import get_trade_decision
-from bot.trade_manager import place_trade
-from api.oanda_api import OandaApi
-from models.trade_settings import TradeSettings
-from models.trade_decision import TradeDecision
-import constants.defs as defs
-from infrastructure.log_wrapper import LogWrapper
+# Import stream_bot components
+from stream_bot.stream_bot import run_bot
+from stream_bot.trade_settings_collection import tradeSettingsCollection
+from stream_bot.candle_worker import CandleWorker
+from stream_bot.trade_worker import TradeWorker
+from stream_bot.price_processor import PriceProcessor
+from stream_example.stream_prices import PriceStreamer
 
 # Import analysis classes
 try:
@@ -35,18 +35,24 @@ try:
     ANALYSIS_AVAILABLE = True
 except ImportError:
     ANALYSIS_AVAILABLE = False
-    print("⚠️  Analysis classes not available - running in bot-only mode")
+    print("⚠️  Analysis classes not available - running in stream_bot-only mode")
+
+from api.oanda_api import OandaApi
+from models.trade_decision import TradeDecision
+from models.trade_settings import TradeSettings
+import constants.defs as defs
+from infrastructure.log_wrapper import LogWrapper
 
 class TradingMode(Enum):
     """Trading modes for the unified system."""
-    BOT_ONLY = "bot_only"
+    STREAM_BOT_ONLY = "stream_bot_only"
     ANALYSIS_ONLY = "analysis_only"
     HYBRID = "hybrid"
     AI_ENHANCED = "ai_enhanced"
 
 @dataclass
 class UnifiedTradeDecision:
-    """Unified trade decision combining bot and analysis signals."""
+    """Unified trade decision combining stream_bot and analysis signals."""
     timestamp: str
     pair: str
     signal: str  # BUY, SELL, NONE
@@ -57,7 +63,7 @@ class UnifiedTradeDecision:
     reasoning: str
     
     # Source information
-    bot_signal: Optional[str] = None
+    stream_bot_signal: Optional[str] = None
     analysis_signal: Optional[str] = None
     ai_confidence: Optional[float] = None
     
@@ -68,7 +74,7 @@ class UnifiedTradeDecision:
 class UnifiedTradingSystem:
     """
     Unified trading system that combines:
-    - Your existing trading bot (technical analysis)
+    - Your stream_bot (real-time price streaming + technical analysis)
     - Analysis classes (AI-powered analysis)
     - Risk management and position sizing
     """
@@ -79,16 +85,24 @@ class UnifiedTradingSystem:
         Initialize the unified trading system.
         
         Args:
-            mode: Trading mode (bot_only, analysis_only, hybrid, ai_enhanced)
+            mode: Trading mode (stream_bot_only, analysis_only, hybrid, ai_enhanced)
             analysis_mode: Analysis mode for AI analysis
         """
         self.mode = mode
         self.analysis_mode = analysis_mode
         
-        # Initialize components
-        self.bot = Bot()
+        # Initialize stream_bot components
+        self.load_stream_bot_settings()
         self.api = OandaApi()
         self.logger = LogWrapper("UnifiedTradingSystem")
+        
+        # Stream bot components
+        self.shared_prices = {}
+        self.shared_prices_events = {}
+        self.shared_prices_lock = threading.Lock()
+        self.candle_queue = Queue()
+        self.trade_work_queue = Queue()
+        self.threads = []
         
         # Analysis components (if available)
         self.analysis_available = ANALYSIS_AVAILABLE
@@ -100,7 +114,7 @@ class UnifiedTradingSystem:
             self.realtime_analyzer = RealtimeTradingAnalyzer(update_interval=60)
         
         # Trading parameters
-        self.currency_pairs = list(self.bot.trade_settings.keys())
+        self.currency_pairs = tradeSettingsCollection.pair_list()
         self.trade_history = []
         self.is_running = False
         
@@ -112,13 +126,20 @@ class UnifiedTradingSystem:
         
         # Signal thresholds
         self.min_confidence_threshold = 0.7
-        self.bot_signal_weight = 0.6
+        self.stream_bot_signal_weight = 0.6
         self.analysis_signal_weight = 0.4
         
         print(f"🤖 Unified Trading System initialized")
         print(f"📊 Mode: {mode.value.upper()}")
         print(f"🎯 Pairs: {', '.join(self.currency_pairs)}")
         print(f"🤖 Analysis Available: {self.analysis_available}")
+        print(f"📈 Stream Bot Granularity: {tradeSettingsCollection.granularity}")
+        print(f"💰 Trade Risk: {tradeSettingsCollection.trade_risk}")
+    
+    def load_stream_bot_settings(self):
+        """Load stream_bot settings."""
+        tradeSettingsCollection.load_trade_settings()
+        tradeSettingsCollection.print_collection()
     
     def start_trading(self):
         """Start the unified trading system."""
@@ -128,8 +149,11 @@ class UnifiedTradingSystem:
         print(f"📈 Mode: {self.mode.value.upper()}")
         print("=" * 60)
         
+        # Initialize stream bot components
+        self._initialize_stream_bot()
+        
         # Start analysis threads if available
-        if self.analysis_available and self.mode != TradingMode.BOT_ONLY:
+        if self.analysis_available and self.mode != TradingMode.STREAM_BOT_ONLY:
             self._start_analysis_threads()
         
         # Start main trading loop
@@ -142,11 +166,63 @@ class UnifiedTradingSystem:
         """Stop the unified trading system."""
         self.is_running = False
         
+        # Stop all threads
+        for thread in self.threads:
+            if thread.is_alive():
+                thread.join(timeout=1)
+        
         if self.analysis_available:
             self.unified_analyzer.stop_analysis()
             self.realtime_analyzer.stop_realtime_analysis()
         
         print("🛑 Unified Trading System stopped")
+    
+    def _initialize_stream_bot(self):
+        """Initialize stream_bot components."""
+        # Initialize shared prices and events
+        for pair in self.currency_pairs:
+            self.shared_prices_events[pair] = threading.Event()
+            self.shared_prices[pair] = {}
+        
+        # Start price streamer
+        price_stream_t = PriceStreamer(self.shared_prices, self.shared_prices_lock, self.shared_prices_events)
+        price_stream_t.daemon = True
+        self.threads.append(price_stream_t)
+        price_stream_t.start()
+        
+        # Start price processors
+        for pair in self.currency_pairs:
+            processing_t = PriceProcessor(
+                self.shared_prices, 
+                self.shared_prices_lock, 
+                self.shared_prices_events, 
+                self.candle_queue,
+                f"PriceProcessor_{pair}", 
+                pair,
+                tradeSettingsCollection.granularity
+            )
+            processing_t.daemon = True
+            self.threads.append(processing_t)
+            processing_t.start()
+        
+        # Start candle workers if not analysis-only mode
+        if self.mode != TradingMode.ANALYSIS_ONLY:
+            for pair in self.currency_pairs:
+                candle_t = CandleWorker(
+                    tradeSettingsCollection.get_trade_settings(pair),
+                    self.candle_queue,
+                    self.trade_work_queue,
+                    tradeSettingsCollection.granularity
+                )
+                candle_t.daemon = True
+                self.threads.append(candle_t)
+                candle_t.start()
+        
+        # Start trade worker
+        trade_worker_t = TradeWorker(self.trade_work_queue, tradeSettingsCollection.trade_risk)
+        trade_worker_t.daemon = True
+        self.threads.append(trade_worker_t)
+        trade_worker_t.start()
     
     def _start_analysis_threads(self):
         """Start analysis threads for AI-powered analysis."""
@@ -168,13 +244,8 @@ class UnifiedTradingSystem:
                 # Reset daily counters if needed
                 self._reset_daily_counters_if_needed()
                 
-                # Process new candles from bot
-                triggered_pairs = self.bot.candle_manager.update_timings()
-                
-                if triggered_pairs:
-                    for pair in triggered_pairs:
-                        if self._should_analyze_pair(pair):
-                            self._process_pair_signals(pair)
+                # Process signals from stream_bot and analysis
+                self._process_signals()
                 
                 # Sleep to maintain interval
                 elapsed_time = time.time() - start_time
@@ -187,80 +258,71 @@ class UnifiedTradingSystem:
                 self.logger.logger.error(f"Error in trading loop: {e}")
                 time.sleep(5)
     
-    def _process_pair_signals(self, pair: str):
-        """Process signals for a specific currency pair."""
+    def _process_signals(self):
+        """Process signals from both stream_bot and analysis."""
         try:
-            # Get bot signal (existing technical analysis)
-            bot_signal = self._get_bot_signal(pair)
+            # Get stream_bot signals (from trade work queue)
+            stream_bot_signals = []
+            while not self.trade_work_queue.empty():
+                try:
+                    signal = self.trade_work_queue.get_nowait()
+                    if isinstance(signal, TradeDecision):
+                        stream_bot_signals.append(signal)
+                except:
+                    break
             
-            # Get analysis signal (AI-powered analysis)
-            analysis_signal = None
-            if self.analysis_available and self.mode != TradingMode.BOT_ONLY:
-                analysis_signal = self._get_analysis_signal(pair)
+            # Get analysis signals (if available)
+            analysis_signals = []
+            if self.analysis_available:
+                analysis_signals = self._get_analysis_signals()
             
-            # Combine signals based on mode
-            unified_decision = self._combine_signals(pair, bot_signal, analysis_signal)
-            
-            if unified_decision and self._validate_trade_decision(unified_decision):
-                self._execute_trade(unified_decision)
+            # Combine and process signals
+            for pair in self.currency_pairs:
+                stream_signal = next((s for s in stream_bot_signals if s.pair == pair), None)
+                analysis_signal = next((s for s in analysis_signals if s.currency_pair == pair), None)
                 
+                unified_decision = self._combine_signals(pair, stream_signal, analysis_signal)
+                
+                if unified_decision and self._validate_trade_decision(unified_decision):
+                    self._execute_trade(unified_decision)
+                    
         except Exception as e:
-            self.logger.logger.error(f"Error processing signals for {pair}: {e}")
+            self.logger.logger.error(f"Error processing signals: {e}")
     
-    def _get_bot_signal(self, pair: str) -> Optional[TradeDecision]:
-        """Get trading signal from the existing bot."""
+    def _get_analysis_signals(self) -> List[TradingSignal]:
+        """Get trading signals from AI analysis."""
         try:
-            last_time = self.bot.candle_manager.timings[pair].last_time
-            trade_decision = get_trade_decision(
-                last_time, 
-                pair, 
-                self.bot.GRANULARITY, 
-                self.api,
-                self.bot.trade_settings[pair], 
-                self.bot.log_message
-            )
-            return trade_decision
-        except Exception as e:
-            self.logger.logger.error(f"Error getting bot signal for {pair}: {e}")
-            return None
-    
-    def _get_analysis_signal(self, pair: str) -> Optional[TradingSignal]:
-        """Get trading signal from AI analysis."""
-        try:
+            signals = []
+            
             if self.mode == TradingMode.AI_ENHANCED:
                 # Use unified analyzer for enhanced analysis
                 if hasattr(self.unified_analyzer, 'signals_history') and self.unified_analyzer.signals_history:
-                    # Get the latest signal for this pair
-                    for signal in reversed(self.unified_analyzer.signals_history):
-                        if signal.currency_pair == pair:
-                            return signal
+                    signals.extend(self.unified_analyzer.signals_history[-10:])  # Last 10 signals
             else:
                 # Use realtime analyzer for basic analysis
                 if hasattr(self.realtime_analyzer, 'signals_history') and self.realtime_analyzer.signals_history:
-                    for signal in reversed(self.realtime_analyzer.signals_history):
-                        if signal.currency_pair == pair:
-                            return signal
+                    signals.extend(self.realtime_analyzer.signals_history[-10:])  # Last 10 signals
             
-            return None
+            return signals
         except Exception as e:
-            self.logger.logger.error(f"Error getting analysis signal for {pair}: {e}")
-            return None
+            self.logger.logger.error(f"Error getting analysis signals: {e}")
+            return []
     
-    def _combine_signals(self, pair: str, bot_signal: Optional[TradeDecision], 
+    def _combine_signals(self, pair: str, stream_signal: Optional[TradeDecision], 
                         analysis_signal: Optional[TradingSignal]) -> Optional[UnifiedTradeDecision]:
-        """Combine bot and analysis signals based on trading mode."""
+        """Combine stream_bot and analysis signals based on trading mode."""
         try:
-            if self.mode == TradingMode.BOT_ONLY:
-                return self._bot_only_decision(pair, bot_signal)
+            if self.mode == TradingMode.STREAM_BOT_ONLY:
+                return self._stream_bot_only_decision(pair, stream_signal)
             
             elif self.mode == TradingMode.ANALYSIS_ONLY:
                 return self._analysis_only_decision(pair, analysis_signal)
             
             elif self.mode == TradingMode.HYBRID:
-                return self._hybrid_decision(pair, bot_signal, analysis_signal)
+                return self._hybrid_decision(pair, stream_signal, analysis_signal)
             
             elif self.mode == TradingMode.AI_ENHANCED:
-                return self._ai_enhanced_decision(pair, bot_signal, analysis_signal)
+                return self._ai_enhanced_decision(pair, stream_signal, analysis_signal)
             
             return None
             
@@ -268,19 +330,19 @@ class UnifiedTradingSystem:
             self.logger.logger.error(f"Error combining signals for {pair}: {e}")
             return None
     
-    def _bot_only_decision(self, pair: str, bot_signal: Optional[TradeDecision]) -> Optional[UnifiedTradeDecision]:
-        """Create decision based only on bot signal."""
-        if bot_signal and bot_signal.signal != defs.NONE:
+    def _stream_bot_only_decision(self, pair: str, stream_signal: Optional[TradeDecision]) -> Optional[UnifiedTradeDecision]:
+        """Create decision based only on stream_bot signal."""
+        if stream_signal and stream_signal.signal != defs.NONE:
             return UnifiedTradeDecision(
                 timestamp=datetime.now().isoformat(),
                 pair=pair,
-                signal=bot_signal.signal,
-                confidence=0.8,  # High confidence for bot signals
-                entry_price=bot_signal.price,
-                stop_loss=bot_signal.sl,
-                take_profit=bot_signal.tp,
-                reasoning="Bot technical analysis signal",
-                bot_signal=bot_signal.signal
+                signal=stream_signal.signal,
+                confidence=0.8,  # High confidence for stream_bot signals
+                entry_price=stream_signal.price,
+                stop_loss=stream_signal.sl,
+                take_profit=stream_signal.tp,
+                reasoning="Stream bot technical analysis signal",
+                stream_bot_signal=stream_signal.signal
             )
         return None
     
@@ -301,46 +363,46 @@ class UnifiedTradingSystem:
             )
         return None
     
-    def _hybrid_decision(self, pair: str, bot_signal: Optional[TradeDecision], 
+    def _hybrid_decision(self, pair: str, stream_signal: Optional[TradeDecision], 
                         analysis_signal: Optional[TradingSignal]) -> Optional[UnifiedTradeDecision]:
-        """Create decision combining both bot and analysis signals."""
-        bot_confidence = 0.0
+        """Create decision combining both stream_bot and analysis signals."""
+        stream_confidence = 0.0
         analysis_confidence = 0.0
         
-        if bot_signal and bot_signal.signal != defs.NONE:
-            bot_confidence = 0.8
+        if stream_signal and stream_signal.signal != defs.NONE:
+            stream_confidence = 0.8
         
         if analysis_signal and analysis_signal.signal_type != 'HOLD':
             analysis_confidence = analysis_signal.confidence
         
         # Weighted combination
-        total_confidence = (bot_confidence * self.bot_signal_weight + 
+        total_confidence = (stream_confidence * self.stream_bot_signal_weight + 
                           analysis_confidence * self.analysis_signal_weight)
         
         if total_confidence >= self.min_confidence_threshold:
-            # Use bot signal as primary, enhance with analysis
-            if bot_signal and bot_signal.signal != defs.NONE:
-                reasoning = f"Bot: {bot_signal.signal}"
+            # Use stream_bot signal as primary, enhance with analysis
+            if stream_signal and stream_signal.signal != defs.NONE:
+                reasoning = f"Stream Bot: {stream_signal.signal}"
                 if analysis_signal:
                     reasoning += f" | AI: {analysis_signal.signal_type} ({analysis_signal.confidence:.2f})"
                 
                 return UnifiedTradeDecision(
                     timestamp=datetime.now().isoformat(),
                     pair=pair,
-                    signal=bot_signal.signal,
+                    signal=stream_signal.signal,
                     confidence=total_confidence,
-                    entry_price=bot_signal.price,
-                    stop_loss=bot_signal.sl,
-                    take_profit=bot_signal.tp,
+                    entry_price=stream_signal.price,
+                    stop_loss=stream_signal.sl,
+                    take_profit=stream_signal.tp,
                     reasoning=reasoning,
-                    bot_signal=bot_signal.signal,
+                    stream_bot_signal=stream_signal.signal,
                     analysis_signal=analysis_signal.signal_type if analysis_signal else None,
                     ai_confidence=analysis_signal.confidence if analysis_signal else None
                 )
         
         return None
     
-    def _ai_enhanced_decision(self, pair: str, bot_signal: Optional[TradeDecision], 
+    def _ai_enhanced_decision(self, pair: str, stream_signal: Optional[TradeDecision], 
                             analysis_signal: Optional[TradingSignal]) -> Optional[UnifiedTradeDecision]:
         """Create AI-enhanced decision with higher weight on analysis."""
         if analysis_signal and analysis_signal.confidence >= 0.75:
@@ -357,9 +419,9 @@ class UnifiedTradingSystem:
                 analysis_signal=analysis_signal.signal_type,
                 ai_confidence=analysis_signal.confidence
             )
-        elif bot_signal and bot_signal.signal != defs.NONE:
-            # Fall back to bot signal
-            return self._bot_only_decision(pair, bot_signal)
+        elif stream_signal and stream_signal.signal != defs.NONE:
+            # Fall back to stream_bot signal
+            return self._stream_bot_only_decision(pair, stream_signal)
         
         return None
     
@@ -393,9 +455,9 @@ class UnifiedTradingSystem:
             return False
     
     def _execute_trade(self, decision: UnifiedTradeDecision):
-        """Execute the trade decision."""
+        """Execute the trade decision using stream_bot's trade worker."""
         try:
-            # Create TradeDecision object for the bot's trade manager
+            # Create TradeDecision object for the stream_bot's trade worker
             trade_decision = TradeDecision({
                 'PAIR': decision.pair,
                 'SIGNAL': decision.signal,
@@ -405,40 +467,25 @@ class UnifiedTradingSystem:
                 'LOSS': abs(decision.entry_price - decision.stop_loss)
             })
             
-            # Place trade using existing bot infrastructure
-            trade_id = place_trade(
-                trade_decision,
-                self.api,
-                self.bot.log_message,
-                self.bot.log_to_error,
-                self.bot.trade_risk
-            )
+            # Add to trade work queue for stream_bot's trade worker to process
+            self.trade_work_queue.put(trade_decision)
             
-            if trade_id:
-                # Update tracking
-                self.open_trades[decision.pair] = trade_id
-                today = datetime.now().strftime('%Y-%m-%d')
-                self.daily_trade_count[today] = self.daily_trade_count.get(today, 0) + 1
-                
-                # Log success
-                self.logger.logger.info(f"✅ Trade executed: {decision.pair} {decision.signal} "
-                                      f"(Confidence: {decision.confidence:.2f})")
-                self.logger.logger.info(f"   Entry: {decision.entry_price}, "
-                                      f"SL: {decision.stop_loss}, TP: {decision.take_profit}")
-                self.logger.logger.info(f"   Reasoning: {decision.reasoning}")
-                
-                # Store in history
-                self.trade_history.append(decision)
-                
-            else:
-                self.logger.logger.error(f"❌ Failed to execute trade for {decision.pair}")
-                
+            # Update tracking
+            today = datetime.now().strftime('%Y-%m-%d')
+            self.daily_trade_count[today] = self.daily_trade_count.get(today, 0) + 1
+            
+            # Log success
+            self.logger.logger.info(f"✅ Trade queued: {decision.pair} {decision.signal} "
+                                  f"(Confidence: {decision.confidence:.2f})")
+            self.logger.logger.info(f"   Entry: {decision.entry_price}, "
+                                  f"SL: {decision.stop_loss}, TP: {decision.take_profit}")
+            self.logger.logger.info(f"   Reasoning: {decision.reasoning}")
+            
+            # Store in history
+            self.trade_history.append(decision)
+            
         except Exception as e:
             self.logger.logger.error(f"Error executing trade: {e}")
-    
-    def _should_analyze_pair(self, pair: str) -> bool:
-        """Check if pair should be analyzed."""
-        return pair in self.currency_pairs
     
     def _reset_daily_counters_if_needed(self):
         """Reset daily counters if it's a new day."""
@@ -455,15 +502,17 @@ class UnifiedTradingSystem:
             'open_trades': len(self.open_trades),
             'daily_trades': self.daily_trade_count.get(datetime.now().strftime('%Y-%m-%d'), 0),
             'total_trades': len(self.trade_history),
-            'analysis_available': self.analysis_available
+            'analysis_available': self.analysis_available,
+            'stream_bot_granularity': tradeSettingsCollection.granularity,
+            'trade_risk': tradeSettingsCollection.trade_risk
         }
 
 def main():
     """Main function to run the unified trading system."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Unified Trading System")
-    parser.add_argument('--mode', choices=['bot_only', 'analysis_only', 'hybrid', 'ai_enhanced'],
+    parser = argparse.ArgumentParser(description="Unified Trading System with Stream Bot")
+    parser.add_argument('--mode', choices=['stream_bot_only', 'analysis_only', 'hybrid', 'ai_enhanced'],
                        default='hybrid', help='Trading mode')
     parser.add_argument('--analysis-mode', choices=['basic', 'adaptive', 'comprehensive'],
                        default='adaptive', help='Analysis mode')
@@ -472,7 +521,7 @@ def main():
     
     # Convert string to enum
     mode_map = {
-        'bot_only': TradingMode.BOT_ONLY,
+        'stream_bot_only': TradingMode.STREAM_BOT_ONLY,
         'analysis_only': TradingMode.ANALYSIS_ONLY,
         'hybrid': TradingMode.HYBRID,
         'ai_enhanced': TradingMode.AI_ENHANCED
