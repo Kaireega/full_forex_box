@@ -71,6 +71,9 @@ function showTab(tabName) {
         case 'analysis':
             loadComprehensiveAnalysis();
             break;
+        case 'trades':
+            loadTradeData();
+            break;
     }
 }
 
@@ -781,6 +784,177 @@ function showNotification(message, type = 'info') {
             container.removeChild(notification);
         }, 300);
     }, 5000);
+}
+
+// ============================================================================
+// TRADE EXECUTION FUNCTIONS
+// ============================================================================
+
+async function loadTradeData() {
+    // Populate trade pair selector
+    await loadOptions();
+    populateTradePairSelector();
+    
+    // Load initial trade data
+    await loadOpenTrades();
+    await loadPositions();
+}
+
+function populateTradePairSelector() {
+    const tradePairSelector = document.getElementById('trade-pair');
+    const options = document.getElementById('pair-selector');
+    
+    if (options && tradePairSelector) {
+        tradePairSelector.innerHTML = '<option value="">Select Pair</option>';
+        for (let option of options.options) {
+            if (option.value) {
+                const newOption = document.createElement('option');
+                newOption.value = option.value;
+                newOption.textContent = option.textContent;
+                tradePairSelector.appendChild(newOption);
+            }
+        }
+    }
+}
+
+async function placeTrade() {
+    const pair = document.getElementById('trade-pair').value;
+    const direction = document.getElementById('trade-direction').value;
+    const units = parseInt(document.getElementById('trade-units').value);
+    const stopLoss = document.getElementById('trade-stop-loss').value;
+    const takeProfit = document.getElementById('trade-take-profit').value;
+    
+    if (!pair || !direction || !units) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    const tradeData = {
+        pair: pair,
+        direction: direction,
+        units: units
+    };
+    
+    if (stopLoss) tradeData.stop_loss = parseFloat(stopLoss);
+    if (takeProfit) tradeData.take_profit = parseFloat(takeProfit);
+    
+    try {
+        const response = await fetch('/api/trade/place', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(tradeData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            // Clear form
+            document.getElementById('trade-stop-loss').value = '';
+            document.getElementById('trade-take-profit').value = '';
+            // Refresh trade data
+            await loadOpenTrades();
+            await loadPositions();
+        } else {
+            showNotification('Failed to place trade: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error placing trade:', error);
+        showNotification('Error placing trade: ' + error.message, 'error');
+    }
+}
+
+async function loadOpenTrades() {
+    try {
+        const response = await fetch('/api/trade/open');
+        const data = await response.json();
+        
+        const tradesContainer = document.getElementById('open-trades-list');
+        
+        if (data.trades && data.trades.length > 0) {
+            tradesContainer.innerHTML = data.trades.map(trade => `
+                <div class="trade-item">
+                    <div class="trade-info">
+                        <div class="trade-pair">${trade.instrument}</div>
+                        <div class="trade-details">
+                            ${trade.side} ${trade.units} units<br>
+                            Entry: ${trade.price}<br>
+                            Time: ${new Date(trade.openTime).toLocaleString()}
+                        </div>
+                        <div class="trade-pnl ${parseFloat(trade.unrealizedPL) >= 0 ? 'positive' : 'negative'}">
+                            P&L: ${parseFloat(trade.unrealizedPL).toFixed(2)}
+                        </div>
+                    </div>
+                    <button class="close-trade-btn" onclick="closeTrade('${trade.id}')">Close</button>
+                </div>
+            `).join('');
+        } else {
+            tradesContainer.innerHTML = '<p style="opacity: 0.7;">No open trades found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading open trades:', error);
+        showNotification('Error loading open trades: ' + error.message, 'error');
+    }
+}
+
+async function loadPositions() {
+    try {
+        const response = await fetch('/api/positions');
+        const data = await response.json();
+        
+        const positionsContainer = document.getElementById('positions-list');
+        
+        if (data.positions && data.positions.length > 0) {
+            positionsContainer.innerHTML = data.positions.map(position => `
+                <div class="trade-item">
+                    <div class="trade-info">
+                        <div class="trade-pair">${position.instrument}</div>
+                        <div class="trade-details">
+                            ${position.long.units > 0 ? 'LONG' : 'SHORT'} ${Math.abs(position.long.units || position.short.units)} units<br>
+                            Avg Price: ${position.long.averagePrice || position.short.averagePrice}<br>
+                            Time: ${new Date(position.long.time || position.short.time).toLocaleString()}
+                        </div>
+                        <div class="trade-pnl ${parseFloat(position.unrealizedPL) >= 0 ? 'positive' : 'negative'}">
+                            P&L: ${parseFloat(position.unrealizedPL).toFixed(2)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            positionsContainer.innerHTML = '<p style="opacity: 0.7;">No open positions found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading positions:', error);
+        showNotification('Error loading positions: ' + error.message, 'error');
+    }
+}
+
+async function closeTrade(tradeId) {
+    if (!confirm('Are you sure you want to close this trade?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/trade/close/${tradeId}`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            // Refresh trade data
+            await loadOpenTrades();
+            await loadPositions();
+        } else {
+            showNotification('Failed to close trade: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error closing trade:', error);
+        showNotification('Error closing trade: ' + error.message, 'error');
+    }
 }
 
 // Close modal when clicking outside

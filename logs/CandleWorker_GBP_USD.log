@@ -1,0 +1,2 @@
+2025-07-27 18:43:22 LogWrapper init() ./logs/CandleWorker_GBP_USD.log
+2025-07-27 18:43:22 Created CandleWorker for GBP_USD {'pair': 'GBP_USD', 'n_ma': 12, 'n_std': 2.0, 'maxspread': 0.0004, 'mingain': 0.0006, 'riskreward': 1.5, 'atr_multiplier': 2.0, 'atr_period': 14, 'rsi_period': 14, 'rsi_overbought': 70, 'rsi_oversold': 30}

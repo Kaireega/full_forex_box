@@ -1,0 +1,40 @@
+[
+  {
+    "timestamp": "2025-07-27T18:43:29.766167",
+    "currency_pair": "USD_JPY",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 147.72,
+    "stop_loss": 147.67,
+    "take_profit": 147.82,
+    "reasoning": "The USD/JPY is in a strong uptrend with a trend strength of 1.00 and a breakout probability of 0.60, indicating momentum continuation. The M1 RSI is overbought at 78.8, suggesting a minor pullback is likely, so entering slightly below current price at 147.7200 captures a pullback entry. Support strength is very high at 0.96, providing a solid base for tight stop placement at 147.6700. The M5 and H1 timeframes show moderate RSI and strong moving averages alignment, confirming trend continuation. The take profit at 147.8200 allows riding momentum while taking partial profits near resistance levels.",
+    "risk_level": "MEDIUM",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 1.0057213621272603,
+    "time_horizon": "medium",
+    "profit_probability": 0.7700632062532724,
+    "alternative_entry": 147.7,
+    "trailing_stop": 147.74
+  },
+  {
+    "timestamp": "2025-07-27T18:43:35.486285",
+    "currency_pair": "GBP_USD",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 1.3435,
+    "stop_loss": 1.3428,
+    "take_profit": 1.346,
+    "reasoning": "The GBP/USD pair is in a strong uptrend with maximum trend strength (1.00) and high breakout probability (0.80). Momentum is positive, supporting continuation. Support strength is very strong (0.98), indicating low risk of immediate reversal. Short-term RSI on M1 and M5 are neutral to slightly bullish, while H1 RSI is low, suggesting a potential pullback has occurred and momentum may resume upwards. The price is near short-term SMAs, indicating a good entry point on a minor pullback. Tight stop loss below recent support limits risk. Take profit is set to capture continuation of the strong trend. Trailing stops should be used to lock in profits as price moves higher.",
+    "risk_level": "MEDIUM",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 1.0129914873513342,
+    "time_horizon": "medium",
+    "profit_probability": 0.95,
+    "alternative_entry": 1.3432,
+    "trailing_stop": 1.3445
+  }
+]

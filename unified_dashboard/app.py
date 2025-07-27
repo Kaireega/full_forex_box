@@ -344,6 +344,116 @@ def ff_calendar(start):
         return jsonify({"error": str(e)}), 500
 
 # ============================================================================
+# TRADE EXECUTION ENDPOINTS
+# ============================================================================
+
+@app.route('/api/trade/place', methods=['POST'])
+def place_trade():
+    """Place a new trade."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Extract trade parameters
+        pair = data.get('pair')
+        direction = data.get('direction')  # 'buy' or 'sell'
+        units = data.get('units', 1000)
+        stop_loss = data.get('stop_loss')
+        take_profit = data.get('take_profit')
+        
+        if not pair or not direction:
+            return jsonify({'success': False, 'error': 'Missing pair or direction'})
+        
+        # Convert direction to OANDA format
+        oanda_direction = 1 if direction.lower() == 'buy' else -1
+        
+        # Place trade using OANDA API
+        api = OandaApi()
+        result = api.place_trade(
+            pair_name=pair,
+            units=units,
+            direction=oanda_direction,
+            stop_loss=stop_loss,
+            take_profit=take_profit
+        )
+        
+        if result and 'orderFillTransaction' in result:
+            return jsonify({
+                'success': True,
+                'trade_id': result['orderFillTransaction']['id'],
+                'message': f'Trade placed successfully: {direction.upper()} {units} {pair}'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to place trade'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/trade/close/<trade_id>', methods=['POST'])
+def close_trade(trade_id):
+    """Close an existing trade."""
+    try:
+        api = OandaApi()
+        result = api.close_trade(trade_id)
+        
+        if result and 'orderFillTransaction' in result:
+            return jsonify({
+                'success': True,
+                'message': f'Trade {trade_id} closed successfully'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to close trade'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/trade/open')
+def get_open_trades():
+    """Get all open trades."""
+    try:
+        api = OandaApi()
+        trades = api.get_open_trades()
+        
+        if trades and 'trades' in trades:
+            return jsonify({'trades': trades['trades']})
+        else:
+            return jsonify({'trades': []})
+            
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/trade/<trade_id>')
+def get_trade(trade_id):
+    """Get specific trade details."""
+    try:
+        api = OandaApi()
+        trade = api.get_open_trade(trade_id)
+        
+        if trade:
+            return jsonify({'trade': trade})
+        else:
+            return jsonify({'error': 'Trade not found'})
+            
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/positions')
+def get_positions():
+    """Get all open positions."""
+    try:
+        api = OandaApi()
+        positions = api.get_positions()
+        
+        if positions and 'positions' in positions:
+            return jsonify({'positions': positions['positions']})
+        else:
+            return jsonify({'positions': []})
+            
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+# ============================================================================
 # COMPREHENSIVE ANALYSIS ENDPOINTS
 # ============================================================================
 

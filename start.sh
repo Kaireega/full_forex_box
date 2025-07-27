@@ -64,6 +64,7 @@ show_help() {
     echo "  stream-bot-only - Start stream_bot-only trading (technical analysis)"
     echo "  analysis-only - Start analysis-only trading (AI-powered only)"
     echo "  web-dashboard - Start web dashboard server"
+    echo "  unified-dashboard - Start unified dashboard (recommended)"
     echo "  modern        - Start modern services (unified system + web dashboard)"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
@@ -74,7 +75,8 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  ./start.sh setup         # Full system setup"
-    echo "  ./start.sh modern        # Start modern services (recommended)"
+    echo "  ./start.sh unified-dashboard # Start unified dashboard (recommended)"
+    echo "  ./start.sh modern        # Start modern services (unified system + web dashboard)"
     echo "  ./start.sh all           # Start all services (legacy + modern)"
     echo "  ./start.sh unified       # Start unified trading system"
     echo "  ./start.sh web-dashboard # Start web dashboard"
@@ -368,6 +370,36 @@ start_web_dashboard() {
     fi
 }
 
+# Function to start unified dashboard
+start_unified_dashboard() {
+    print_status "Starting unified dashboard server..."
+    
+    if port_in_use 5001; then
+        print_warning "Port 5001 is already in use"
+        return 1
+    fi
+    
+    if [ ! -f "start_unified_dashboard.py" ]; then
+        print_error "start_unified_dashboard.py not found"
+        return 1
+    fi
+    
+    python3 start_unified_dashboard.py &
+    UNIFIED_DASHBOARD_PID=$!
+    echo $UNIFIED_DASHBOARD_PID > .unified_dashboard.pid
+    
+    # Wait a moment and check if unified dashboard started
+    sleep 3
+    if kill -0 $UNIFIED_DASHBOARD_PID 2>/dev/null; then
+        print_status "Unified dashboard started successfully (PID: $UNIFIED_DASHBOARD_PID) ✅"
+        print_status "Access at: http://localhost:5001"
+        return 0
+    else
+        print_error "Failed to start unified dashboard"
+        return 1
+    fi
+}
+
 # Function to start analysis-only trading
 start_analysis_only_trading() {
     print_status "Starting analysis-only trading (AI-powered only)..."
@@ -476,6 +508,16 @@ stop_services() {
         rm -f .web_dashboard.pid
     fi
     
+    # Stop unified dashboard
+    if [ -f ".unified_dashboard.pid" ]; then
+        UNIFIED_DASHBOARD_PID=$(cat .unified_dashboard.pid)
+        if kill -0 $UNIFIED_DASHBOARD_PID 2>/dev/null; then
+            kill $UNIFIED_DASHBOARD_PID
+            print_status "Unified dashboard stopped"
+        fi
+        rm -f .unified_dashboard.pid
+    fi
+    
     # Stop analysis-only trading system
     if [ -f ".analysis_only.pid" ]; then
         ANALYSIS_ONLY_PID=$(cat .analysis_only.pid)
@@ -577,6 +619,19 @@ check_status() {
         print_status "Web Dashboard: Running on http://localhost:5001 ✅"
     else
         print_warning "Web Dashboard: Not running ❌"
+    fi
+    
+    # Check unified dashboard
+    if [ -f ".unified_dashboard.pid" ]; then
+        UNIFIED_DASHBOARD_PID=$(cat .unified_dashboard.pid)
+        if kill -0 $UNIFIED_DASHBOARD_PID 2>/dev/null; then
+            print_status "Unified Dashboard: Running (PID: $UNIFIED_DASHBOARD_PID) ✅"
+        else
+            print_warning "Unified Dashboard: Not running ❌"
+            rm -f .unified_dashboard.pid
+        fi
+    else
+        print_warning "Unified Dashboard: Not running ❌"
     fi
     
     # Check AI-enhanced trading system
@@ -752,6 +807,13 @@ case "${1:-help}" in
         check_requirements
         start_web_dashboard
         print_status "Press Ctrl+C to stop the web dashboard server"
+        wait
+        ;;
+    
+    "unified-dashboard")
+        check_requirements
+        start_unified_dashboard
+        print_status "Press Ctrl+C to stop the unified dashboard server"
         wait
         ;;
     
