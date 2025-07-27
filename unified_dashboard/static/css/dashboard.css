@@ -149,6 +149,48 @@ body {
     background: #da190b;
 }
 
+/* Account Summary Section */
+.account-summary-section {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    margin-bottom: 20px;
+}
+
+.account-summary-section h3 {
+    margin-bottom: 15px;
+    color: #FFD700;
+    font-size: 1.3em;
+}
+
+.account-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.account-item {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+}
+
+.account-label {
+    font-weight: bold;
+    color: #FFD700;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.account-value {
+    font-size: 1.1em;
+    color: white;
+    font-weight: 500;
+}
+
 /* Summary Panel */
 .summary-panel {
     background: rgba(255,255,255,0.1);

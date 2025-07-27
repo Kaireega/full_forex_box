@@ -72,15 +72,11 @@ class OandaApi:
         else:
             params["count"] = count
 
-        print(f"Fetching candles for {pair_name} with params: {params}")
         ok, data = self.make_request(url, params=params)
-        print(f"OANDA API response - ok: {ok}, data keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
     
         if ok == True and 'candles' in data:
-            print(f"Successfully fetched {len(data['candles'])} candles")
             return data['candles']
         else:
-            print("ERROR fetch_candles()", params, data)
             return None
 
     def get_candles_df(self, pair_name, **kwargs):
@@ -118,12 +114,9 @@ class OandaApi:
 
     
     def web_api_candles(self, pair_name, granularity, count):
-        print(f"web_api_candles called with: {pair_name}, {granularity}, {count}")
         df = self.get_candles_df(pair_name, granularity=granularity, count=count)
-        print(f"get_candles_df returned: {df.shape if df is not None else 'None'}")
         
         if df is None or df.shape[0] == 0:
-            print("No data returned from get_candles_df")
             return None
 
         cols = ['time', 'mid_o', 'mid_h', 'mid_l', 'mid_c']
@@ -145,7 +138,6 @@ class OandaApi:
             }
             candles.append(candle)
         
-        print(f"Returning {len(candles)} candles")
         return {'candles': candles}
 
 
