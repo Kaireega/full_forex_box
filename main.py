@@ -13,7 +13,7 @@ def db_tests():
 
     #d.add_one(DataDB.SAMPLE_COLL, dict(age=12, name='paddy', street='elm'))
     #print(d.query_single(DataDB.SAMPLE_COLL, age=34))
-    print(d.query_distinct(DataDB.SAMPLE_COLL, 'age'))
+    #print(d.query_distinct(DataDB.SAMPLE_COLL, 'age'))
 
 def openai_analysis_demo():
     """
