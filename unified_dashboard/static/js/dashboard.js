@@ -500,13 +500,19 @@ async function loadChartData() {
         return;
     }
     
+    console.log('Loading chart data for:', pair, granularity, count);
+    
     try {
         const response = await fetch(`/api/prices/${pair}/${granularity}/${count}`);
         const data = await response.json();
         
+        console.log('Chart data received:', data);
+        
         if (data.candles && data.candles.length > 0) {
+            console.log('Creating price chart with', data.candles.length, 'candles');
             createPriceChart(data.candles, pair, granularity);
         } else {
+            console.log('No candles found in data');
             showNotification('No price data available', 'error');
         }
     } catch (error) {
