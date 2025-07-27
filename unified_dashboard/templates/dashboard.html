@@ -72,6 +72,41 @@
                 </button>
             </div>
             
+            <!-- Account Summary Section -->
+            <div class="account-summary-section">
+                <h3>💰 Account Summary</h3>
+                <div class="account-summary-grid" id="account-summary">
+                    <div class="account-item">
+                        <div class="account-label">Account Number</div>
+                        <div class="account-value" id="account-id">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">Balance</div>
+                        <div class="account-value" id="account-balance">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">NAV</div>
+                        <div class="account-value" id="account-nav">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">Open Trades</div>
+                        <div class="account-value" id="account-open-trades">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">Unrealized P&L</div>
+                        <div class="account-value" id="account-unrealized-pl">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">Margin Closeout %</div>
+                        <div class="account-value" id="account-margin-closeout">Loading...</div>
+                    </div>
+                    <div class="account-item">
+                        <div class="account-label">Last Transaction ID</div>
+                        <div class="account-value" id="account-last-transaction">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Summary Panel -->
             <div class="summary-panel">
                 <h3>📊 Trading Summary</h3>
@@ -209,9 +244,12 @@
                 <div class="calendar-controls">
                     <div class="date-picker">
                         <label>
-                            Month: 
+                            Month (YYYY-MM): 
                             <input type="month" id="ff-month" />
                         </label>
+                        <small style="opacity: 0.7; display: block; margin-top: 5px;">
+                            Select month in YYYY-MM format (e.g., 2025-01 for January 2025)
+                        </small>
                     </div>
                     <button class="btn" onclick="loadFFCalendar()">Fetch FF Data</button>
                 </div>

@@ -7,8 +7,6 @@ let currentTab = 'trading';
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Initializing Unified Forex Trading Dashboard...');
-    
     // Set up initial state
     updateTime();
     loadOptions();
@@ -18,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateTime, 1000);
     setInterval(updateStatus, 5000);
     setInterval(refreshData, 30000);
+    setInterval(loadAccountData, 60000); // Update account data every minute
     
     // Initial status check
     updateStatus();
@@ -422,11 +421,8 @@ document.getElementById('confidence-threshold').addEventListener('input', functi
 
 async function loadOptions() {
     try {
-        console.log('Loading options...');
         const response = await fetch('/api/options');
         const options = await response.json();
-        
-        console.log('Options received:', options);
         
         // Populate selectors
         populateSelector('pair-selector', options.pairs);
@@ -464,8 +460,6 @@ async function loadOptions() {
             countSelector.value = 100; // Set default to 100
         }
         
-        console.log('Options loaded successfully');
-        
     } catch (error) {
         console.error('Error loading options:', error);
         showNotification('Error loading options: ' + error.message, 'error');
@@ -500,19 +494,13 @@ async function loadChartData() {
         return;
     }
     
-    console.log('Loading chart data for:', pair, granularity, count);
-    
     try {
         const response = await fetch(`/api/prices/${pair}/${granularity}/${count}`);
         const data = await response.json();
         
-        console.log('Chart data received:', data);
-        
         if (data.candles && data.candles.length > 0) {
-            console.log('Creating price chart with', data.candles.length, 'candles');
             createPriceChart(data.candles, pair, granularity);
         } else {
-            console.log('No candles found in data');
             showNotification('No price data available', 'error');
         }
     } catch (error) {
@@ -585,31 +573,15 @@ async function loadAccountData() {
         const response = await fetch('/api/account');
         const data = await response.json();
         
-        const accountContainer = document.getElementById('account-data');
-        
-        if (data.account) {
-            accountContainer.innerHTML = `
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-value">${data.account.currency}</div>
-                        <div class="summary-label">Currency</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${parseFloat(data.account.balance).toFixed(2)}</div>
-                        <div class="summary-label">Balance</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${parseFloat(data.account.pl).toFixed(2)}</div>
-                        <div class="summary-label">P&L</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${data.account.openTradeCount}</div>
-                        <div class="summary-label">Open Trades</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            accountContainer.innerHTML = '<p style="opacity: 0.7;">Account data not available.</p>';
+        if (data) {
+            // Update account summary fields
+            document.getElementById('account-id').textContent = data.id || 'N/A';
+            document.getElementById('account-balance').textContent = data.balance || 'N/A';
+            document.getElementById('account-nav').textContent = data.NAV || 'N/A';
+            document.getElementById('account-open-trades').textContent = data.openTradeCount || 'N/A';
+            document.getElementById('account-unrealized-pl').textContent = data.unrealizedPL || 'N/A';
+            document.getElementById('account-margin-closeout').textContent = data.marginCloseoutPercent || 'N/A';
+            document.getElementById('account-last-transaction').textContent = data.lastTransactionID || 'N/A';
         }
     } catch (error) {
         console.error('Error loading account data:', error);
@@ -666,11 +638,8 @@ async function loadTECalendar() {
     }
     
     try {
-        console.log('Loading TE calendar for:', startDate, 'to', endDate);
         const response = await fetch(`/api/te/calendar/${startDate}/${endDate}`);
         const data = await response.json();
-        
-        console.log('TE calendar data received:', data);
         
         const calendarContainer = document.getElementById('te-calendar-data');
         
@@ -693,19 +662,22 @@ async function loadTECalendar() {
 }
 
 async function loadFFCalendar() {
-    const month = document.getElementById('ff-month').value;
+    const monthInput = document.getElementById('ff-month').value;
     
-    if (!month) {
+    if (!monthInput) {
         showNotification('Please select a month', 'error');
         return;
     }
     
+    // Convert HTML5 month input format (YYYY-MM) to ForexFactory API format (MMM.YYYY)
+    const months = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+    const [year, month] = monthInput.split("-");
+    const monthIndex = parseInt(month, 10) - 1;
+    const formattedMonth = `${months[monthIndex]}${year}`;
+    
     try {
-        console.log('Loading FF calendar for month:', month);
-        const response = await fetch(`/api/ff/calendar/${month}`);
+        const response = await fetch(`/api/ff/calendar/${formattedMonth}`);
         const data = await response.json();
-        
-        console.log('FF calendar data received:', data);
         
         const calendarContainer = document.getElementById('ff-calendar-data');
         
