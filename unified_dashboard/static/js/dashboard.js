@@ -422,8 +422,11 @@ document.getElementById('confidence-threshold').addEventListener('input', functi
 
 async function loadOptions() {
     try {
+        console.log('Loading options...');
         const response = await fetch('/api/options');
         const options = await response.json();
+        
+        console.log('Options received:', options);
         
         // Populate selectors
         populateSelector('pair-selector', options.pairs);
@@ -433,29 +436,56 @@ async function loadOptions() {
         populateSelector('analysis-pair-selector', options.pairs);
         
         // Set default values
-        if (options.pairs.length > 0) {
-            document.getElementById('pair-selector').value = options.pairs[0].value;
-            document.getElementById('tech-pair-selector').value = options.pairs[0].value;
-            document.getElementById('analysis-pair-selector').value = options.pairs[0].value;
+        if (options.pairs && options.pairs.length > 0) {
+            const firstPair = options.pairs[0];
+            const pairValue = firstPair.value || firstPair.key;
+            document.getElementById('pair-selector').value = pairValue;
+            document.getElementById('tech-pair-selector').value = pairValue;
+            document.getElementById('analysis-pair-selector').value = pairValue;
         }
-        if (options.granularities.length > 0) {
-            document.getElementById('granularity-selector').value = options.granularities[0].value;
-            document.getElementById('tech-granularity-selector').value = options.granularities[0].value;
+        if (options.granularities && options.granularities.length > 0) {
+            const firstGranularity = options.granularities[0];
+            const granularityValue = firstGranularity.value || firstGranularity.key;
+            document.getElementById('granularity-selector').value = granularityValue;
+            document.getElementById('tech-granularity-selector').value = granularityValue;
         }
+        
+        // Populate count selector with common values
+        const countSelector = document.getElementById('count-selector');
+        if (countSelector) {
+            countSelector.innerHTML = '<option value="">Select...</option>';
+            const counts = [50, 100, 200, 500, 1000];
+            counts.forEach(count => {
+                const option = document.createElement('option');
+                option.value = count;
+                option.textContent = `${count} Candles`;
+                countSelector.appendChild(option);
+            });
+            countSelector.value = 100; // Set default to 100
+        }
+        
+        console.log('Options loaded successfully');
         
     } catch (error) {
         console.error('Error loading options:', error);
+        showNotification('Error loading options: ' + error.message, 'error');
     }
 }
 
 function populateSelector(selectorId, options) {
     const selector = document.getElementById(selectorId);
+    if (!selector) {
+        console.error(`Selector with id '${selectorId}' not found`);
+        return;
+    }
+    
     selector.innerHTML = '<option value="">Select...</option>';
     
     options.forEach(option => {
         const optionElement = document.createElement('option');
-        optionElement.value = option.value;
-        optionElement.textContent = option.title;
+        // Handle both formats: {value, title} and {key, text, value}
+        optionElement.value = option.value || option.key;
+        optionElement.textContent = option.title || option.text || option.value || option.key;
         selector.appendChild(optionElement);
     });
 }
@@ -630,18 +660,21 @@ async function loadTECalendar() {
     }
     
     try {
+        console.log('Loading TE calendar for:', startDate, 'to', endDate);
         const response = await fetch(`/api/te/calendar/${startDate}/${endDate}`);
         const data = await response.json();
+        
+        console.log('TE calendar data received:', data);
         
         const calendarContainer = document.getElementById('te-calendar-data');
         
         if (data && data.length > 0) {
             calendarContainer.innerHTML = data.map(event => `
                 <div class="calendar-item">
-                    <div class="calendar-time">${event.time}</div>
-                    <div class="calendar-title">${event.title}</div>
-                    <div class="calendar-impact">Impact: ${event.impact}</div>
-                    <div class="calendar-currency">Currency: ${event.currency}</div>
+                    <div class="calendar-time">${event.time || event.date || 'N/A'}</div>
+                    <div class="calendar-title">${event.title || event.name || event.event || 'N/A'}</div>
+                    <div class="calendar-impact">Impact: ${event.impact || event.importance || 'N/A'}</div>
+                    <div class="calendar-currency">Currency: ${event.currency || event.country || 'N/A'}</div>
                 </div>
             `).join('');
         } else {
@@ -662,18 +695,21 @@ async function loadFFCalendar() {
     }
     
     try {
+        console.log('Loading FF calendar for month:', month);
         const response = await fetch(`/api/ff/calendar/${month}`);
         const data = await response.json();
+        
+        console.log('FF calendar data received:', data);
         
         const calendarContainer = document.getElementById('ff-calendar-data');
         
         if (data && data.length > 0) {
             calendarContainer.innerHTML = data.map(event => `
                 <div class="calendar-item">
-                    <div class="calendar-time">${event.time}</div>
-                    <div class="calendar-title">${event.title}</div>
-                    <div class="calendar-impact">Impact: ${event.impact}</div>
-                    <div class="calendar-currency">Currency: ${event.currency}</div>
+                    <div class="calendar-time">${event.Time || event.time || event.date || 'N/A'}</div>
+                    <div class="calendar-title">${event.Event || event.title || event.name || event.event || 'N/A'}</div>
+                    <div class="calendar-impact">Currency: ${event.Currency || event.currency || event.country || 'N/A'}</div>
+                    <div class="calendar-currency">Date: ${event.Date || event.date || 'N/A'}</div>
                 </div>
             `).join('');
         } else {
