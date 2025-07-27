@@ -40,20 +40,20 @@ class TradingSignal:
 class RealtimeTradingAnalyzer:
     """Real-time minute-based trading analyzer using OpenAI."""
     
-    def __init__(self, openai_api_key: Optional[str] = None, update_interval: int = 60):
+    def __init__(self, openai_api_key: Optional[str] = None, update_interval: int = 300):
         """
         Initialize the real-time analyzer.
         
         Args:
             openai_api_key: OpenAI API key
-            update_interval: Update interval in seconds (default: 60 for 1-minute updates)
+            update_interval: Update interval in seconds (default: 300 for 5-minute updates)
         """
         self.openai_analyzer = OpenAIAnalyzer(openai_api_key)
         self.oanda_api = OandaApi()
         self.update_interval = update_interval
         
         # Trading parameters
-        self.currency_pairs = ['EUR_USD', 'GBP_USD', 'USD_JPY', 'USD_CHF', 'AUD_USD']
+        self.currency_pairs = ['EUR_USD', 'GBP_USD', 'USD_JPY', 'USD_CHF']
         self.analysis_history = {}
         self.signals_history = []
         self.is_running = False
@@ -112,6 +112,7 @@ class RealtimeTradingAnalyzer:
         try:
             # Get recent market data
             market_data = self._get_market_data(pair)
+           
             if not market_data:
                 return
             
@@ -143,7 +144,7 @@ class RealtimeTradingAnalyzer:
             candles_df = self.oanda_api.get_candles_df(
                 pair, 
                 count=lookback_minutes, 
-                granularity="M1"  # 1-minute candles
+                granularity="M5"  # 5-minute candles
             )
             
             if candles_df is None or candles_df.empty:
@@ -232,6 +233,7 @@ class RealtimeTradingAnalyzer:
             # Prepare data for OpenAI
             analysis_prompt = self._create_trading_prompt(pair, market_data)
             
+            
             # Get OpenAI analysis
             response = self.openai_analyzer.client.chat.completions.create(
                 model=self.openai_analyzer.model,
@@ -257,7 +259,6 @@ class RealtimeTradingAnalyzer:
                 temperature=0.3,
                 max_tokens=800
             )
-            
             # Parse response
             ai_response = response.choices[0].message.content
             signal_data = json.loads(ai_response)

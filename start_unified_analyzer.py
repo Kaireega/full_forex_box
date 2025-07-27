@@ -270,7 +270,7 @@ def run_profitability_test():
         )
         
         # Start analysis for multiple pairs
-        pairs = ['EUR_USD', 'GBP_USD', 'USD_JPY']
+        pairs = ['EUR_USD', 'GBP_USD']
         analysis_thread = analyzer.start_analysis(pairs)
         
         # Run for 5 minutes
@@ -395,28 +395,28 @@ Examples:
     parser.add_argument(
         '--mode', 
         choices=['basic', 'adaptive', 'comprehensive'],
-        default='adaptive',
-        help='Analysis mode (default: adaptive)'
+        default='basic',
+        help='Analysis mode (default: basic)'
     )
     
     parser.add_argument(
         '--pairs',
         nargs='+',
-        default=['EUR_USD', 'GBP_USD', 'USD_JPY'],
-        help='Currency pairs to analyze (default: EUR_USD GBP_USD USD_JPY)'
+        default=['EUR_USD', 'USD_JPY'],
+        help='Currency pairs to analyze (default: EUR_USD USD_JPY)'
     )
     
     parser.add_argument(
         '--interval',
         type=int,
-        default=60,
-        help='Update interval in seconds (default: 60)'
+        default=300,
+        help='Update interval in seconds (default: 300)'
     )
     
     parser.add_argument(
         '--duration',
         type=int,
-        default=0,
+        default=1,
         help='Duration in minutes (0 = unlimited, default: 0)'
     )
     

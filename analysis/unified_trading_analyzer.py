@@ -19,12 +19,16 @@ from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum
 
-# Add project root to path
-sys.path.append("../")
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 from api.openai_api import OpenAIAnalyzer
 from api.oanda_api import OandaApi
 import scraping.forexfactory_calendar as ff
+
+
 
 class MarketCondition(Enum):
     """Market condition types."""
@@ -105,7 +109,7 @@ class UnifiedTradingAnalyzer:
     """
     
     def __init__(self, openai_api_key: Optional[str] = None, 
-                 update_interval: int = 60, 
+                 update_interval: int = 300, 
                  mode: AnalysisMode = AnalysisMode.ADAPTIVE):
         """
         Initialize the unified analyzer.
@@ -853,7 +857,8 @@ class UnifiedTradingAnalyzer:
         """Analyze news impact using OpenAI."""
         try:
             if months is None:
-                months = ['jan.2025']
+                months = ['jan.2025', 'feb.2025', 'mar.2025', 'apr.2025', 'may.2025',
+                           'jun.2025', 'jul.2025', 'aug.2025', 'sep.2025', 'oct.2025', 'nov.2025', 'dec.2025']
             
             all_news_data = []
             for month in months:
