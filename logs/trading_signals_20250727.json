@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-07-27T18:43:28.147641",
+    "currency_pair": "USD_JPY",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "entry_price": 147.702,
+    "stop_loss": 147.502,
+    "take_profit": 147.997,
+    "reasoning": "The USD/JPY is currently trading just above the short-term moving averages (MA5 slightly below current price, MA10 and MA20 slightly above), indicating a neutral to mildly bullish bias. The RSI at 50.45 suggests a balanced momentum without overbought or oversold conditions. The MACD is positive but very close to zero, indicating a nascent bullish momentum. Price recently tested the support level at 147.623 and rebounded, showing buying interest near support. The Bollinger Bands are narrow, reflecting low volatility but the price is near the middle band, suggesting potential for upward movement. Recent price action shows a recovery from a dip 7-6 minutes ago with higher highs and higher lows, indicating short-term bullish momentum. The resistance at 147.801 is the target for take profit, providing a good risk/reward ratio. Stop loss is set 20 pips below entry to limit downside risk. Given the low volatility, position sizing should be moderate. Overall, the setup favors a short-term buy with a 1:1.5 risk/reward ratio and over 70% confidence based on momentum and support bounce.",
+    "market_conditions": "Low volatility, short-term bullish momentum after support bounce, neutral RSI, narrow Bollinger Bands indicating consolidation with potential breakout.",
+    "risk_level": "MEDIUM"
+  },
+  {
+    "timestamp": "2025-07-27T18:43:31.918544",
+    "currency_pair": "GBP_USD",
+    "signal_type": "HOLD",
+    "confidence": 0.65,
+    "entry_price": 1.34352,
+    "stop_loss": 1.34152,
+    "take_profit": 1.34532,
+    "reasoning": "The GBP/USD pair is currently trading near the middle Bollinger Band with a very neutral RSI of 50.50 and a near-zero MACD, indicating a lack of clear momentum. The short-term moving averages (MA5, MA10, MA20) are tightly clustered, showing no strong directional bias. Price action over the last 10 minutes shows mixed bullish and bearish candles with no decisive breakout above resistance (1.34486) or below support (1.34298). Volatility is low at 0.00028, limiting the potential for strong moves in the immediate 1-5 minute timeframe. Given these factors, the market is indecisive and does not present a high-confidence trade setup at this moment.",
+    "market_conditions": "Sideways consolidation with low volatility and neutral momentum indicators",
+    "risk_level": "LOW"
+  }
+]
