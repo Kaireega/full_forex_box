@@ -1,16 +1,23 @@
 import sys
 import os
-sys.path.append("../")
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from api.openai_api import OpenAIAnalyzer
+from api.oanda_api import OandaApi
+import scraping.forexfactory_calendar as ff
 
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Union
 import json
-
-from api.openai_api import OpenAIAnalyzer
 from api.oanda_api import OandaApi
 import scraping.forexfactory_calendar as ff
+from typing import List, Dict
+from datetime import datetime
+import traceback
 
 class ForexOpenAIAnalysis:
     """
@@ -27,58 +34,75 @@ class ForexOpenAIAnalysis:
         self.openai_analyzer = OpenAIAnalyzer(openai_api_key)
         self.oanda_api = OandaApi()
         
+
+
     def analyze_current_market_conditions(self, currency_pairs: List[str] = None) -> Dict:
         """
-        Analyze current market conditions using OpenAI.
-        
+        Analyze current market conditions using OpenAI across multiple timeframes.
+
         Args:
             currency_pairs: List of currency pairs to analyze (e.g., ['EUR_USD', 'GBP_USD'])
-        
+
         Returns:
-            Comprehensive market analysis
+            Comprehensive market analysis dictionary
         """
         if currency_pairs is None:
             currency_pairs = ['EUR_USD', 'GBP_USD', 'USD_JPY', 'USD_CHF', 'AUD_USD']
-        
+
+        timeframes = ["M15", "H1", "D"]
+        max_candles = 5000
+        market_data = {}
+
         try:
-            # Gather current market data
-            market_data = {}
             for pair in currency_pairs:
-                try:
-                    # Get recent price data from OANDA
-                    price_data = self.oanda_api.get_candles_df(pair, count=100, granularity="H1")
-                    if price_data is not None and not price_data.empty:
-                        market_data[pair] = {
-                            'recent_prices': price_data.tail(20).to_dict('records'),
-                            'current_price': float(price_data.iloc[-1]['mid_c']),
-                            'price_change_24h': float(price_data.iloc[-1]['mid_c']) - float(price_data.iloc[-24]['mid_c']) if len(price_data) >= 24 else 0,
-                            'volatility': float(price_data['mid_c'].pct_change().std()),
-                            'volume': float(price_data['volume'].mean()) if 'volume' in price_data.columns else None
+                market_data[pair] = {}
+                for tf in timeframes:
+                    try:
+                        df = self.oanda_api.get_candles_df(pair, count=max_candles, granularity=tf)
+                        if df is None or df.empty:
+                            continue
+
+                        # Basic metrics
+                        mid_c = df['mid_c'].astype(float)
+                        current_price = float(mid_c.iloc[-1])
+                        volatility = float(mid_c.pct_change().std())
+                        price_change_24 = (current_price - float(mid_c.iloc[-24])) if len(df) >= 24 else 0
+                        avg_volume = float(df['volume'].mean()) if 'volume' in df.columns else None
+
+                        market_data[pair][tf] = {
+                            "recent_prices": df.tail(100).to_dict('records'),
+                            "current_price": current_price,
+                            "price_change_24": price_change_24,
+                            "volatility": volatility,
+                            "volume": avg_volume,
+                            "total_candles": len(df)
                         }
-                except Exception as e:
-                    print(f"Error fetching data for {pair}: {e}")
-                    continue
-            
-            # Use OpenAI to analyze the market data
+
+                    except Exception as e:
+                        print(f"[ERROR] Failed to fetch {tf} data for {pair}: {e}")
+                        traceback.print_exc()
+                        continue
+
+            # Pass the structured market data to your OpenAI strategy generator
             analysis = self.openai_analyzer.generate_trading_strategy(
                 market_data=market_data,
-                risk_tolerance="medium"
+                risk_tolerance="high"
             )
-            
+
             return {
                 "timestamp": datetime.now().isoformat(),
                 "currency_pairs_analyzed": currency_pairs,
                 "market_data": market_data,
                 "openai_analysis": analysis
             }
-            
+
         except Exception as e:
             return {
                 "error": str(e),
                 "timestamp": datetime.now().isoformat(),
                 "currency_pairs": currency_pairs
             }
-    
+
     def analyze_news_impact(self, months: List[str] = None) -> Dict:
         """
         Analyze forex factory news and their potential market impact using OpenAI.
@@ -90,8 +114,8 @@ class ForexOpenAIAnalysis:
             News sentiment analysis and market impact assessment
         """
         if months is None:
-            months = ['jan.2025']  # Current month by default
-        
+            months = [ 'jun.2025', 'jul.2025']  # Current month by default
+
         try:
             all_news_data = []
             
@@ -226,7 +250,7 @@ class ForexOpenAIAnalysis:
             elif (news.get('Actual') and news.get('Forecast') and 
                   news.get('Actual') != '' and news.get('Forecast') != ''):
                 filtered_news.append(news)
-        
+            
         return filtered_news
     
     def _create_analysis_dataframe(self, market_data: Dict) -> pd.DataFrame:

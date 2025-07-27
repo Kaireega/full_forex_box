@@ -1,0 +1,21 @@
+[
+  {
+    "timestamp": "2025-07-26T19:51:54.349330",
+    "currency_pair": "EUR_USD",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 1.1741,
+    "stop_loss": 1.1737,
+    "take_profit": 1.1755,
+    "reasoning": "The EUR/USD is in a strong uptrend with maximum trend strength (1.00) and high breakout probability (0.80). Momentum is positive, and support strength is very strong (0.98), indicating a reliable pullback entry near 1.17410 just above recent SMA levels. RSI values across timeframes are moderate, suggesting room for upward movement without overbought conditions. Tight stop loss below recent support at 1.17370 limits risk, while take profit at 1.17550 captures continuation of the breakout momentum. Trailing stops should be used to lock in profits as price advances.",
+    "risk_level": "LOW",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 1.014915065052287,
+    "time_horizon": "medium",
+    "profit_probability": 0.95,
+    "alternative_entry": 1.1739,
+    "trailing_stop": 1.1745
+  }
+]

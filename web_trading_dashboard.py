@@ -540,7 +540,7 @@ def start_analyzer():
             return jsonify({'success': False, 'error': 'Analyzer is already running'})
         
         # Initialize analyzer
-        analyzer = RealtimeTradingAnalyzer(update_interval=60)
+        analyzer = RealtimeTradingAnalyzer()
         
         # Start analyzer thread
         analyzer_thread = analyzer.start_realtime_analysis(['EUR_USD', 'GBP_USD', 'USD_JPY'])

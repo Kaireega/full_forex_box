@@ -34,9 +34,8 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Function to check if a port is in use
 port_in_use() {
-    lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1
+    lsof -Pi :$1 -sTCP:LISTEN | grep -i python >/dev/null
 }
 
 # Function to display help

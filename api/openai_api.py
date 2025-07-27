@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Union
 from datetime import datetime
 import constants.defs as defs
+from openai import OpenAI
 
 class OpenAIAnalyzer:
     """
@@ -22,9 +23,9 @@ class OpenAIAnalyzer:
         if not self.api_key:
             raise ValueError("OpenAI API key must be provided either as parameter or OPENAI_API_KEY environment variable")
         
-        self.client = openai.OpenAI(api_key=self.api_key)
-        self.model = "gpt-4o-mini"  # Using GPT-4o-mini for cost efficiency
-    
+        self.client = OpenAI(api_key=self.api_key)
+        self.model = "gpt-4.1-mini"  # Using GPT-4.1-mini for cost efficiency
+
     def analyze_forex_data(self, data: pd.DataFrame, analysis_type: str = "general") -> Dict:
         """
         Analyze forex data using OpenAI.
@@ -138,7 +139,8 @@ class OpenAIAnalyzer:
         """
         try:
             prompt = f"""
-            Based on the following market data and risk tolerance, generate a comprehensive forex trading strategy:
+            Based on the following market data and risk tolerance,
+             generate a comprehensive forex trading strategy:
             
             Market Data:
             {json.dumps(market_data, indent=2, default=str)}

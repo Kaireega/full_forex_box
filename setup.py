@@ -149,7 +149,7 @@ class ForexSystemSetup:
         
         # Check environment variables
         required_env_vars = {
-            "OPENAI_API_KEY": "OpenAI API key for analysis features"
+            "OPENAI_API_KEY": "f092735885a6ea06b0941160eb4855bb-ecdf07214bee956d3eb9d5dd1a618a7e"
         }
         
         missing_env_vars = []
