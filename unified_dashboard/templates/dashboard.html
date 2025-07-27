@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Forex Trading Dashboard - Comprehensive System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>🚀 Unified Forex Trading Dashboard</h1>
+            <p>Comprehensive Real-time Trading System with AI Analysis, Charts & Economic Data</p>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="system-status"></div>
+                <span id="system-status-text">System Status</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="stream-bot-status"></div>
+                <span id="stream-bot-status-text">Stream Bot</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="analysis-status"></div>
+                <span id="analysis-status-text">AI Analysis</span>
+            </div>
+            <div class="status-item">
+                <span id="current-time">--:--:--</span>
+            </div>
+            <div class="status-item">
+                <span id="last-update">Last Update: --</span>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('trading')">🤖 Trading System</button>
+            <button class="tab-btn" onclick="showTab('charts')">📈 Price Charts</button>
+            <button class="tab-btn" onclick="showTab('technicals')">📊 Technical Analysis</button>
+            <button class="tab-btn" onclick="showTab('calendars')">📅 Economic Calendars</button>
+            <button class="tab-btn" onclick="showTab('analysis')">🔍 Comprehensive Analysis</button>
+        </div>
+        
+        <!-- Trading System Tab -->
+        <div id="trading-tab" class="tab-content active">
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn" onclick="startSystem()" id="start-btn">
+                    <span id="start-btn-text">Start System</span>
+                    <span class="loading" id="start-loading" style="display: none;"></span>
+                </button>
+                <button class="btn btn-stop" onclick="stopSystem()" id="stop-btn" disabled>
+                    <span id="stop-btn-text">Stop System</span>
+                    <span class="loading" id="stop-loading" style="display: none;"></span>
+                </button>
+                <button class="btn" onclick="refreshData()" id="refresh-btn">
+                    <span id="refresh-btn-text">Refresh Data</span>
+                    <span class="loading" id="refresh-loading" style="display: none;"></span>
+                </button>
+                <button class="btn" onclick="showSettings()" id="settings-btn">
+                    Settings
+                </button>
+            </div>
+            
+            <!-- Summary Panel -->
+            <div class="summary-panel">
+                <h3>📊 Trading Summary</h3>
+                <div class="summary-grid" id="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-value" id="total-signals">0</div>
+                        <div class="summary-label">Total Signals</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="avg-confidence">0%</div>
+                        <div class="summary-label">Avg Confidence</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="high-confidence">0</div>
+                        <div class="summary-label">High Confidence</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="active-pairs">0</div>
+                        <div class="summary-label">Active Pairs</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="open-trades">0</div>
+                        <div class="summary-label">Open Trades</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="daily-trades">0</div>
+                        <div class="summary-label">Daily Trades</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Signals Container -->
+            <div class="signals-container">
+                <div class="signals-panel">
+                    <h3>🔄 Recent Signals</h3>
+                    <div id="recent-signals">
+                        <p style="opacity: 0.7;">No signals yet. Start the system to begin generating signals.</p>
+                    </div>
+                </div>
+                
+                <div class="signals-panel">
+                    <h3>⚡ High Confidence Signals</h3>
+                    <div id="high-confidence-signals">
+                        <p style="opacity: 0.7;">High confidence signals will appear here.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Panel -->
+            <div class="signals-panel">
+                <h3>📈 System Performance</h3>
+                <div id="performance-metrics">
+                    <p style="opacity: 0.7;">Performance metrics will appear here once the system is running.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Price Charts Tab -->
+        <div id="charts-tab" class="tab-content">
+            <div class="chart-controls">
+                <div class="chart-selectors">
+                    <select id="pair-selector" onchange="loadChartData()">
+                        <option value="">Select Currency Pair</option>
+                    </select>
+                    <select id="granularity-selector" onchange="loadChartData()">
+                        <option value="">Select Timeframe</option>
+                    </select>
+                    <select id="count-selector" onchange="loadChartData()">
+                        <option value="100">100 Candles</option>
+                        <option value="200">200 Candles</option>
+                        <option value="500">500 Candles</option>
+                        <option value="1000">1000 Candles</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="loadChartData()">Load Chart</button>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="price-chart" width="800" height="400"></canvas>
+            </div>
+            
+            <div class="account-summary">
+                <h3>💰 Account Summary</h3>
+                <div id="account-data">
+                    <p style="opacity: 0.7;">Account data will load here.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Technical Analysis Tab -->
+        <div id="technicals-tab" class="tab-content">
+            <div class="technical-controls">
+                <div class="technical-selectors">
+                    <select id="tech-pair-selector" onchange="loadTechnicals()">
+                        <option value="">Select Currency Pair</option>
+                    </select>
+                    <select id="tech-granularity-selector" onchange="loadTechnicals()">
+                        <option value="">Select Timeframe</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="loadTechnicals()">Load Technicals</button>
+            </div>
+            
+            <div class="technicals-container" id="technicals-container">
+                <p style="opacity: 0.7;">Select a currency pair and timeframe to load technical indicators.</p>
+            </div>
+        </div>
+        
+        <!-- Economic Calendars Tab -->
+        <div id="calendars-tab" class="tab-content">
+            <!-- TradingEconomics Calendar -->
+            <div class="calendar-section">
+                <h3>📅 TradingEconomics - Economic Calendar</h3>
+                <div class="calendar-controls">
+                    <div class="date-picker">
+                        <label>
+                            Start Date: 
+                            <input type="date" id="te-start-date" />
+                        </label>
+                        <label>
+                            End Date: 
+                            <input type="date" id="te-end-date" />
+                        </label>
+                    </div>
+                    <button class="btn" onclick="loadTECalendar()">Fetch TE Data</button>
+                </div>
+                <div id="te-calendar-data">
+                    <p style="opacity: 0.7;">Select dates and click "Fetch TE Data" to load TradingEconomics calendar.</p>
+                </div>
+            </div>
+            
+            <!-- ForexFactory Calendar -->
+            <div class="calendar-section">
+                <h3>📅 ForexFactory - Economic Calendar</h3>
+                <div class="calendar-controls">
+                    <div class="date-picker">
+                        <label>
+                            Month: 
+                            <input type="month" id="ff-month" />
+                        </label>
+                    </div>
+                    <button class="btn" onclick="loadFFCalendar()">Fetch FF Data</button>
+                </div>
+                <div id="ff-calendar-data">
+                    <p style="opacity: 0.7;">Select month and click "Fetch FF Data" to load ForexFactory calendar.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comprehensive Analysis Tab -->
+        <div id="analysis-tab" class="tab-content">
+            <div class="analysis-controls">
+                <select id="analysis-pair-selector" onchange="loadComprehensiveAnalysis()">
+                    <option value="">Select Currency Pair for Analysis</option>
+                </select>
+                <button class="btn" onclick="loadComprehensiveAnalysis()">Load Analysis</button>
+            </div>
+            
+            <div class="analysis-container">
+                <div class="analysis-section">
+                    <h3>🔍 Comprehensive Analysis</h3>
+                    <div id="comprehensive-analysis">
+                        <p style="opacity: 0.7;">Select a currency pair to load comprehensive analysis.</p>
+                    </div>
+                </div>
+                
+                <div class="analysis-section">
+                    <h3>📊 Pattern Analysis</h3>
+                    <div id="pattern-analysis">
+                        <p style="opacity: 0.7;">Pattern analysis will appear here.</p>
+                    </div>
+                </div>
+                
+                <div class="analysis-section">
+                    <h3>⚠️ Risk Analysis</h3>
+                    <div id="risk-analysis">
+                        <p style="opacity: 0.7;">Risk analysis will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Powered by Unified Trading System | Real-time Forex Trading with AI Analysis</p>
+            <p style="font-size: 0.8em; margin-top: 5px;">⚠️ AI predictions are for informational purposes only. Always conduct your own analysis.</p>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ System Settings</h3>
+                <span class="close" onclick="closeSettings()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="trading-mode">Trading Mode:</label>
+                    <select id="trading-mode">
+                        <option value="hybrid">Hybrid (Stream Bot + AI)</option>
+                        <option value="stream_bot_only">Stream Bot Only</option>
+                        <option value="analysis_only">AI Analysis Only</option>
+                        <option value="ai_enhanced">AI Enhanced</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="analysis-mode">Analysis Mode:</label>
+                    <select id="analysis-mode">
+                        <option value="adaptive">Adaptive</option>
+                        <option value="basic">Basic</option>
+                        <option value="comprehensive">Comprehensive</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="confidence-threshold">Confidence Threshold:</label>
+                    <input type="range" id="confidence-threshold" min="0.5" max="0.9" step="0.1" value="0.7">
+                    <span id="confidence-value">70%</span>
+                </div>
+                <div class="setting-group">
+                    <label for="update-interval">Update Interval (seconds):</label>
+                    <input type="number" id="update-interval" min="30" max="300" value="60">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-stop" onclick="closeSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 

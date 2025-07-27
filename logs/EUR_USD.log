@@ -1,3 +1,0 @@
-2025-07-27 03:50:17 LogWrapper init() ./logs/EUR_USD.log
-2025-07-27 03:50:17 {'pair': 'EUR_USD', 'n_ma': 9, 'n_std': 1.3, 'maxspread': 0.00018, 'mingain': 0.00035, 'riskreward': 2.5, 'atr_multiplier': 1.3, 'atr_period': 8, 'rsi_period': 11, 'rsi_overbought': 63, 'rsi_oversold': 37}
-2025-07-27 03:50:17 CandleManager() init last_candle:last_candle:25-07-25 20:55 is_ready:False
