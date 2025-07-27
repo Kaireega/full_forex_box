@@ -614,6 +614,38 @@ body {
     background: #da190b;
 }
 
+/* Calendar Items */
+.calendar-item {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #FF9800;
+}
+
+.calendar-time {
+    font-weight: bold;
+    color: #FFD700;
+    margin-bottom: 5px;
+}
+
+.calendar-title {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    color: white;
+}
+
+.calendar-impact {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 3px;
+}
+
+.calendar-currency {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
 /* Footer */
 .footer {
     text-align: center;
