@@ -58,11 +58,12 @@ show_help() {
     echo "  web           - Start unified web dashboard"
     echo "  adaptability-test - Test market condition adaptability"
     echo "  profitability-test - Test profitability across market conditions"
-    echo "  unified       - Start unified trading system (bot + analysis integration)"
-    echo "  hybrid        - Start hybrid trading (bot + AI analysis)"
-    echo "  ai-enhanced   - Start AI-enhanced trading (AI-first with bot backup)"
-    echo "  bot-only      - Start bot-only trading (original technical analysis)"
+    echo "  unified       - Start unified trading system (stream_bot + analysis integration)"
+    echo "  hybrid        - Start hybrid trading (stream_bot + AI analysis)"
+    echo "  ai-enhanced   - Start AI-enhanced trading (AI-first with stream_bot backup)"
+    echo "  stream-bot-only - Start stream_bot-only trading (technical analysis)"
     echo "  analysis-only - Start analysis-only trading (AI-powered only)"
+    echo "  web-dashboard - Start web dashboard server"
     echo "  test          - Run test suite"
     echo "  check         - Check system status"
     echo "  stop          - Stop all running services"
@@ -309,6 +310,62 @@ start_bot_only_trading() {
     fi
 }
 
+# Function to start stream-bot-only trading
+start_stream_bot_only_trading() {
+    print_status "Starting stream-bot-only trading (technical analysis)..."
+    
+    if [ ! -f "analysis/unified_trading_system.py" ]; then
+        print_error "analysis/unified_trading_system.py not found"
+        return 1
+    fi
+    
+    python3 analysis/unified_trading_system.py --mode stream_bot_only &
+    STREAM_BOT_ONLY_PID=$!
+    echo $STREAM_BOT_ONLY_PID > .stream_bot_only.pid
+    
+    # Wait a moment and check if stream-bot-only system started
+    sleep 2
+    if kill -0 $STREAM_BOT_ONLY_PID 2>/dev/null; then
+        print_status "Stream-bot-only trading system started successfully (PID: $STREAM_BOT_ONLY_PID) ✅"
+        return 0
+    else
+        print_error "Failed to start stream-bot-only trading system"
+        return 1
+    fi
+}
+
+# Function to start web dashboard
+start_web_dashboard() {
+    print_status "Starting web dashboard server..."
+    
+    if port_in_use 5001; then
+        print_warning "Port 5001 is already in use"
+        return 1
+    fi
+    
+    if [ ! -f "web_dashboard/app.py" ]; then
+        print_error "web_dashboard/app.py not found"
+        return 1
+    fi
+    
+    cd web_dashboard
+    python3 app.py &
+    WEB_DASHBOARD_PID=$!
+    echo $WEB_DASHBOARD_PID > ../.web_dashboard.pid
+    cd ..
+    
+    # Wait a moment and check if web dashboard started
+    sleep 2
+    if kill -0 $WEB_DASHBOARD_PID 2>/dev/null; then
+        print_status "Web dashboard started successfully (PID: $WEB_DASHBOARD_PID) ✅"
+        print_status "Access at: http://localhost:5001"
+        return 0
+    else
+        print_error "Failed to start web dashboard"
+        return 1
+    fi
+}
+
 # Function to start analysis-only trading
 start_analysis_only_trading() {
     print_status "Starting analysis-only trading (AI-powered only)..."
@@ -397,14 +454,24 @@ stop_services() {
         rm -f .ai_enhanced.pid
     fi
     
-    # Stop bot-only trading system
-    if [ -f ".bot_only.pid" ]; then
-        BOT_ONLY_PID=$(cat .bot_only.pid)
-        if kill -0 $BOT_ONLY_PID 2>/dev/null; then
-            kill $BOT_ONLY_PID
-            print_status "Bot-only trading system stopped"
+    # Stop stream-bot-only trading system
+    if [ -f ".stream_bot_only.pid" ]; then
+        STREAM_BOT_ONLY_PID=$(cat .stream_bot_only.pid)
+        if kill -0 $STREAM_BOT_ONLY_PID 2>/dev/null; then
+            kill $STREAM_BOT_ONLY_PID
+            print_status "Stream-bot-only trading system stopped"
         fi
-        rm -f .bot_only.pid
+        rm -f .stream_bot_only.pid
+    fi
+    
+    # Stop web dashboard
+    if [ -f ".web_dashboard.pid" ]; then
+        WEB_DASHBOARD_PID=$(cat .web_dashboard.pid)
+        if kill -0 $WEB_DASHBOARD_PID 2>/dev/null; then
+            kill $WEB_DASHBOARD_PID
+            print_status "Web dashboard stopped"
+        fi
+        rm -f .web_dashboard.pid
     fi
     
     # Stop analysis-only trading system
@@ -488,6 +555,26 @@ check_status() {
         fi
     else
         print_warning "Hybrid Trading System: Not running ❌"
+    fi
+    
+    # Check stream-bot-only trading system
+    if [ -f ".stream_bot_only.pid" ]; then
+        STREAM_BOT_ONLY_PID=$(cat .stream_bot_only.pid)
+        if kill -0 $STREAM_BOT_ONLY_PID 2>/dev/null; then
+            print_status "Stream-Bot-Only Trading System: Running (PID: $STREAM_BOT_ONLY_PID) ✅"
+        else
+            print_warning "Stream-Bot-Only Trading System: Not running ❌"
+            rm -f .stream_bot_only.pid
+        fi
+    else
+        print_warning "Stream-Bot-Only Trading System: Not running ❌"
+    fi
+    
+    # Check web dashboard
+    if port_in_use 5001; then
+        print_status "Web Dashboard: Running on http://localhost:5001 ✅"
+    else
+        print_warning "Web Dashboard: Not running ❌"
     fi
     
     # Check AI-enhanced trading system
@@ -649,10 +736,17 @@ case "${1:-help}" in
         wait
         ;;
     
-    "bot-only")
+    "stream-bot-only")
         check_requirements
-        start_bot_only_trading
-        print_status "Press Ctrl+C to stop the bot-only trading system"
+        start_stream_bot_only_trading
+        print_status "Press Ctrl+C to stop the stream-bot-only trading system"
+        wait
+        ;;
+    
+    "web-dashboard")
+        check_requirements
+        start_web_dashboard
+        print_status "Press Ctrl+C to stop the web dashboard server"
         wait
         ;;
     

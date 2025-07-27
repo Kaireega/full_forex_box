@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Trading Dashboard - Unified System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Unified Forex Trading Dashboard</h1>
+            <p>Real-time trading signals with Stream Bot + AI Analysis</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="system-status"></div>
+                <span id="system-status-text">System Status</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="stream-bot-status"></div>
+                <span id="stream-bot-status-text">Stream Bot</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="analysis-status"></div>
+                <span id="analysis-status-text">AI Analysis</span>
+            </div>
+            <div class="status-item">
+                <span id="current-time">--:--:--</span>
+            </div>
+            <div class="status-item">
+                <span id="last-update">Last Update: --</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="startSystem()" id="start-btn">
+                <span id="start-btn-text">Start System</span>
+                <span class="loading" id="start-loading" style="display: none;"></span>
+            </button>
+            <button class="btn btn-stop" onclick="stopSystem()" id="stop-btn" disabled>
+                <span id="stop-btn-text">Stop System</span>
+                <span class="loading" id="stop-loading" style="display: none;"></span>
+            </button>
+            <button class="btn" onclick="refreshData()" id="refresh-btn">
+                <span id="refresh-btn-text">Refresh Data</span>
+                <span class="loading" id="refresh-loading" style="display: none;"></span>
+            </button>
+            <button class="btn" onclick="showSettings()" id="settings-btn">
+                Settings
+            </button>
+        </div>
+        
+        <div class="summary-panel">
+            <h3>📊 Trading Summary</h3>
+            <div class="summary-grid" id="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value" id="total-signals">0</div>
+                    <div class="summary-label">Total Signals</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="avg-confidence">0%</div>
+                    <div class="summary-label">Avg Confidence</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="high-confidence">0</div>
+                    <div class="summary-label">High Confidence</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="active-pairs">0</div>
+                    <div class="summary-label">Active Pairs</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="open-trades">0</div>
+                    <div class="summary-label">Open Trades</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="daily-trades">0</div>
+                    <div class="summary-label">Daily Trades</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="signals-container">
+            <div class="signals-panel">
+                <h3>🔄 Recent Signals</h3>
+                <div id="recent-signals">
+                    <p style="opacity: 0.7;">No signals yet. Start the system to begin generating signals.</p>
+                </div>
+            </div>
+            
+            <div class="signals-panel">
+                <h3>⚡ High Confidence Signals</h3>
+                <div id="high-confidence-signals">
+                    <p style="opacity: 0.7;">High confidence signals will appear here.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="signals-panel">
+            <h3>📈 System Performance</h3>
+            <div id="performance-metrics">
+                <p style="opacity: 0.7;">Performance metrics will appear here once the system is running.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by Stream Bot + OpenAI Analysis | Real-time Forex Trading</p>
+            <p style="font-size: 0.8em; margin-top: 5px;">⚠️ AI predictions are for informational purposes only. Always conduct your own analysis.</p>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ System Settings</h3>
+                <span class="close" onclick="closeSettings()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="trading-mode">Trading Mode:</label>
+                    <select id="trading-mode">
+                        <option value="hybrid">Hybrid (Stream Bot + AI)</option>
+                        <option value="stream_bot_only">Stream Bot Only</option>
+                        <option value="analysis_only">AI Analysis Only</option>
+                        <option value="ai_enhanced">AI Enhanced</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="analysis-mode">Analysis Mode:</label>
+                    <select id="analysis-mode">
+                        <option value="adaptive">Adaptive</option>
+                        <option value="basic">Basic</option>
+                        <option value="comprehensive">Comprehensive</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="confidence-threshold">Confidence Threshold:</label>
+                    <input type="range" id="confidence-threshold" min="0.5" max="0.9" step="0.1" value="0.7">
+                    <span id="confidence-value">70%</span>
+                </div>
+                <div class="setting-group">
+                    <label for="update-interval">Update Interval (seconds):</label>
+                    <input type="number" id="update-interval" min="30" max="300" value="60">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-stop" onclick="closeSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 
