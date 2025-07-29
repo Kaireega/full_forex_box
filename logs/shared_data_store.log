@@ -796,3 +796,15 @@
 2025-07-28 21:45:05,504 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:05] "GET /api/system/status HTTP/1.1" 200 -
 2025-07-28 21:45:07,944 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:07] "GET /api/account HTTP/1.1" 200 -
 2025-07-28 21:45:08,223 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:08] "GET /api/prices/EUR_USD/M15/100 HTTP/1.1" 200 -
+2025-07-28 21:45:13,310 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:13] "GET /api/account HTTP/1.1" 200 -
+2025-07-28 21:45:13,530 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:13] "GET /api/prices/EUR_USD/M15/100 HTTP/1.1" 200 -
+2025-07-28 21:45:15,321 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:15] "GET /api/alerts HTTP/1.1" 200 -
+2025-07-28 21:45:18,608 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:18] "GET /api/account HTTP/1.1" 200 -
+2025-07-28 21:45:18,714 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:18] "GET /api/prices/EUR_USD/M15/100 HTTP/1.1" 200 -
+2025-07-28 21:45:23,666 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:23] "GET /api/system/status HTTP/1.1" 200 -
+2025-07-28 21:45:23,698 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:23] "GET /api/account HTTP/1.1" 200 -
+2025-07-28 21:45:23,790 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:23] "GET /api/trade/open HTTP/1.1" 200 -
+2025-07-28 21:45:23,794 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:23] "GET /api/positions HTTP/1.1" 200 -
+2025-07-28 21:45:23,836 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:23] "GET /api/account HTTP/1.1" 200 -
+2025-07-28 21:45:24,056 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:24] "GET /api/prices/EUR_USD/M15/100 HTTP/1.1" 200 -
+2025-07-28 21:45:25,327 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 21:45:25] "GET /api/alerts HTTP/1.1" 200 -

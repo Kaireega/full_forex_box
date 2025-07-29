@@ -1670,3 +1670,13 @@
 2025-07-28 21:45:05,288 - SystemCoordinator - INFO -   ✅ stream_bot: running
 2025-07-28 21:45:05,288 - SystemCoordinator - INFO -   ✅ data_streaming: running
 2025-07-28 21:45:05,288 - SystemCoordinator - INFO -   ✅ comprehensive_strategy: running
+2025-07-28 21:45:15,291 - SystemCoordinator - INFO - 📊 System Status:
+2025-07-28 21:45:15,292 - SystemCoordinator - INFO -   ✅ comprehensive_dashboard: running
+2025-07-28 21:45:15,292 - SystemCoordinator - INFO -   ✅ stream_bot: running
+2025-07-28 21:45:15,292 - SystemCoordinator - INFO -   ✅ data_streaming: running
+2025-07-28 21:45:15,292 - SystemCoordinator - INFO -   ✅ comprehensive_strategy: running
+2025-07-28 21:45:25,296 - SystemCoordinator - INFO - 📊 System Status:
+2025-07-28 21:45:25,296 - SystemCoordinator - INFO -   ✅ comprehensive_dashboard: running
+2025-07-28 21:45:25,296 - SystemCoordinator - INFO -   ✅ stream_bot: running
+2025-07-28 21:45:25,296 - SystemCoordinator - INFO -   ✅ data_streaming: running
+2025-07-28 21:45:25,297 - SystemCoordinator - INFO -   ✅ comprehensive_strategy: running
