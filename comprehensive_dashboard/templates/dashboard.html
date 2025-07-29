@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial/dist/chartjs-chart-financial.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -90,7 +91,7 @@
                 <div class="chart-controls">
                     <div class="control-group">
                         <label for="chart-pair">Currency Pair:</label>
-                        <select id="chart-pair" onchange="loadChartData()">
+                        <select id="chart-pair" onchange="loadStreamingChartData()">
                             <option value="EUR_USD">EUR/USD</option>
                             <option value="GBP_USD">GBP/USD</option>
                             <option value="USD_JPY">USD/JPY</option>
@@ -102,7 +103,7 @@
                     </div>
                     <div class="control-group">
                         <label for="chart-timeframe">Timeframe:</label>
-                        <select id="chart-timeframe" onchange="loadChartData()">
+                        <select id="chart-timeframe" onchange="loadStreamingChartData()">
                             <option value="M1">1 Minute</option>
                             <option value="M5">5 Minutes</option>
                             <option value="M15" selected>15 Minutes</option>
@@ -114,12 +115,16 @@
                     </div>
                     <div class="control-group">
                         <label for="chart-count">Candles:</label>
-                        <select id="chart-count" onchange="loadChartData()">
+                        <select id="chart-count" onchange="loadStreamingChartData()">
                             <option value="50">50</option>
                             <option value="100" selected>100</option>
                             <option value="200">200</option>
                             <option value="500">500</option>
                         </select>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-secondary" onclick="startChartStreaming()">Start Streaming</button>
+                        <button class="btn btn-stop" onclick="stopChartStreaming()">Stop Streaming</button>
                     </div>
                 </div>
                 
@@ -151,11 +156,11 @@
             
             <!-- AI Analysis Section -->
             <div id="ai-analysis-section" class="content-section">
-                <h3>🤖 ChatGPT API Analysis</h3>
+                <h3>🤖 Enhanced AI Analysis with Real-time Data</h3>
                 <div class="ai-controls">
                     <div class="control-group">
                         <label for="ai-pair">Currency Pair:</label>
-                        <select id="ai-pair" onchange="loadAIAnalysis()">
+                        <select id="ai-pair" onchange="loadEnhancedAIAnalysis()">
                             <option value="EUR_USD">EUR/USD</option>
                             <option value="GBP_USD">GBP/USD</option>
                             <option value="USD_JPY">USD/JPY</option>
@@ -165,43 +170,51 @@
                             <option value="NZD_USD">NZD/USD</option>
                         </select>
                     </div>
-                    <div class="control-group">
-                        <label for="trade-horizon">Trading Horizon:</label>
-                        <select id="trade-horizon" onchange="loadAIAnalysis()">
-                            <option value="intraday">Intraday (Day Trade)</option>
-                            <option value="swing">Swing Trade</option>
-                            <option value="longterm">Long-Term Trade</option>
-                        </select>
-                    </div>
-                    <button class="btn" onclick="loadAIAnalysis()">Analyze with AI</button>
+                    <button class="btn" onclick="loadEnhancedAIAnalysis()">Get Real-time AI Analysis</button>
+                    <button class="btn btn-secondary" onclick="startRealTimeUpdates()">Start Real-time Updates</button>
+                    <button class="btn btn-stop" onclick="stopRealTimeUpdates()">Stop Updates</button>
                 </div>
                 
                 <div class="ai-analysis-results">
                     <div class="analysis-panel full-width">
-                        <h4>📄 Full AI Analysis Report</h4>
+                        <h4>📄 Live AI Analysis Report</h4>
+                        <div class="analysis-meta">
+                            <span id="analysis-timestamp">Last Update: --</span>
+                            <span id="data-sources">Data Sources: --</span>
+                            <span id="confidence-score">Confidence: --</span>
+                        </div>
                         <div id="ai-full-analysis">
-                            <p style="opacity: 0.7;">Select a pair and trading horizon, then click "Analyze with AI" to get comprehensive market insights.</p>
+                            <p style="opacity: 0.7;">Click "Get Real-time AI Analysis" to get comprehensive market insights with live technical and fundamental data.</p>
                         </div>
                     </div>
                     
-                    <div class="analysis-panel">
-                        <h4>Market Analysis</h4>
-                        <div id="ai-market-analysis">
-                            <p style="opacity: 0.7;">Select a pair and click "Analyze with AI" to get AI-powered market insights.</p>
+                    <div class="analysis-grid">
+                        <div class="analysis-panel">
+                            <h4>Technical Indicators</h4>
+                            <div id="technical-indicators">
+                                <p style="opacity: 0.7;">Technical indicators will appear here.</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="analysis-panel">
-                        <h4>Trading Recommendation</h4>
-                        <div id="ai-recommendation">
-                            <p style="opacity: 0.7;">AI trading recommendation will appear here.</p>
+                        
+                        <div class="analysis-panel">
+                            <h4>Fundamental Events</h4>
+                            <div id="fundamental-events">
+                                <p style="opacity: 0.7;">Recent fundamental events will appear here.</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="analysis-panel">
-                        <h4>Risk Assessment</h4>
-                        <div id="ai-risk-assessment">
-                            <p style="opacity: 0.7;">AI risk assessment will appear here.</p>
+                        
+                        <div class="analysis-panel">
+                            <h4>Streaming Data Status</h4>
+                            <div id="streaming-status">
+                                <p style="opacity: 0.7;">Streaming data status will appear here.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="analysis-panel">
+                            <h4>AI Recommendation</h4>
+                            <div id="ai-recommendation">
+                                <p style="opacity: 0.7;">AI trading recommendation will appear here.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

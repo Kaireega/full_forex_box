@@ -11,6 +11,8 @@ import sys
 from datetime import datetime, timedelta
 import threading
 import time
+import pandas as pd
+from dataclasses import asdict
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,6 +24,7 @@ from scraping.forexfactory_calendar import forexfactory_calendar
 from technicals.indicators import TechnicalIndicators
 from technicals.patterns import PatternRecognition
 from shared_data_store import get_shared_store, TradeAlert
+from api.openai_api import OpenAIAnalyzer
 
 app = Flask(__name__)
 
@@ -709,6 +712,8 @@ Key long-term factors:
         'ai_insights': ai_insights
     }
 
+
+
 @app.route('/api/system/start', methods=['POST'])
 def start_system():
     """Start all trading systems"""
@@ -732,6 +737,279 @@ def stop_system():
             return jsonify({'status': 'error', 'message': 'Failed to stop systems'}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/live-candles/<pair>/<granularity>')
+def get_live_candles(pair, granularity):
+    """Get latest 100 candles for the pair from OANDA API."""
+    try:
+        # Get data from OANDA API
+        df = oanda_api.get_candles_df(pair, granularity=granularity, count=100)
+        candles = []
+        if not df.empty:
+            for idx, row in df.iterrows():
+                # Handle timestamp conversion explicitly
+                if hasattr(idx, 'isoformat'):
+                    timestamp = idx.isoformat()
+                elif isinstance(idx, (int, float)):
+                    from datetime import datetime
+                    timestamp = datetime.fromtimestamp(idx).isoformat()
+                else:
+                    timestamp = str(idx)
+                    
+                candles.append({
+                    'x': timestamp,
+                    'o': row['mid_o'],
+                    'h': row['mid_h'],
+                    'l': row['mid_l'],
+                    'c': row['mid_c']
+                })
+        return jsonify({'candles': candles})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)})
+
+@app.route('/api/ai-analysis/<pair>')
+def ai_analysis(pair):
+    """Get a short actionable AI report using live technical and fundamental data."""
+    try:
+        shared_store = get_shared_store()
+        # 1. Get latest technical data (last candle)
+        technicals = shared_store.get_market_data(pair, limit=1)
+        latest_technical = technicals[-1] if technicals else None
+
+        # 2. Get latest fundamental data (today's events for the pair's currency)
+        # Only try to get fundamental data, don't fail if it doesn't work
+        relevant_events = []
+        try:
+            today = datetime.utcnow().strftime('%Y-%m')
+            ff_events = forexfactory_calendar(today)
+            base, quote = pair.split('_')
+            relevant_events = [e for e in ff_events if e['Currency'] in (base, quote)]
+            recent_events = relevant_events[-5:] if relevant_events else []
+        except Exception as e:
+            # If fundamental data fails, just continue without it
+            recent_events = []
+
+        # 3. Compose prompt
+        prompt = f"""
+You are a professional forex analyst. Given the following real-time technical and fundamental context, provide a short, actionable trading summary for {pair} (1-2 paragraphs, max 5 bullet points if needed):
+
+Technical snapshot (latest candle):\n{latest_technical}\n
+"""
+        if recent_events:
+            prompt += f"Recent fundamental events:\n{recent_events}\n"
+        
+        prompt += "Be concise and actionable. Mention direction, key levels, and any major risks or opportunities."
+        
+        # 4. Call OpenAI
+        openai_api = OpenAIAnalyzer()
+        ai_response = openai_api.client.chat.completions.create(
+            model=openai_api.model,
+            messages=[
+                {"role": "system", "content": "You are a professional forex analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=600
+        )
+        ai_report = ai_response.choices[0].message.content
+        
+        response_data = {
+            'pair': pair,
+            'technical': asdict(latest_technical) if latest_technical else {},
+            'ai_report': ai_report,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Only include fundamental data if we successfully got it
+        if recent_events:
+            response_data['fundamental'] = recent_events
+            
+        return jsonify(response_data)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'error': str(e)})
+
+@app.route('/api/enhanced-ai-analysis/<pair>')
+def enhanced_ai_analysis(pair):
+    """Enhanced AI analysis with live technical data from stream bot and fundamental data."""
+    try:
+        shared_store = get_shared_store()
+        
+        # 1. Get latest technical data from stream bot (last 10 candles for context)
+        technicals = shared_store.get_market_data(pair, limit=10)
+        latest_technical = technicals[-1] if technicals else None
+        technical_context = technicals[-5:] if len(technicals) >= 5 else technicals
+        
+        # 2. Get real-time streaming data if available
+        streaming_data = None
+        try:
+            # Try to get real-time data from stream bot
+            realtime_response = get_realtime_data(pair)
+            if realtime_response and hasattr(realtime_response, 'json'):
+                streaming_data = realtime_response.json
+        except Exception as e:
+            # If streaming data fails, continue without it
+            pass
+        
+        # 3. Get comprehensive fundamental data
+        fundamental_data = {}
+        try:
+            # Get ForexFactory calendar for today
+            today = datetime.utcnow().strftime('%Y-%m')
+            ff_events = forexfactory_calendar(today)
+            base, quote = pair.split('_')
+            relevant_ff_events = [e for e in ff_events if e['Currency'] in (base, quote)]
+            
+            # Get TradingEconomics calendar for today
+            start_date = datetime.utcnow().strftime('%Y-%m-%d')
+            end_date = (datetime.utcnow() + timedelta(days=1)).strftime('%Y-%m-%d')
+            te_events = fx_calendar(start_date, end_date)
+            relevant_te_events = [e for e in te_events if e.get('Currency') in (base, quote)]
+            
+            fundamental_data = {
+                'forexfactory_events': relevant_ff_events[-3:],  # Last 3 events
+                'tradingeconomics_events': relevant_te_events[-3:],  # Last 3 events
+                'base_currency': base,
+                'quote_currency': quote
+            }
+        except Exception as e:
+            # If fundamental data fails, continue without it
+            fundamental_data = {'error': str(e)}
+        
+        # 4. Get technical indicators for context
+        technical_indicators = {}
+        try:
+            if latest_technical:
+                # Calculate basic indicators from the latest data
+                prices = [t.close_price for t in technical_context]
+                if len(prices) >= 14:
+                    # Simple moving averages
+                    sma_20 = sum(prices[-20:]) / min(20, len(prices))
+                    sma_50 = sum(prices[-50:]) / min(50, len(prices))
+                    
+                    # RSI calculation (simplified)
+                    gains = [max(0, prices[i] - prices[i-1]) for i in range(1, len(prices))]
+                    losses = [max(0, prices[i-1] - prices[i]) for i in range(1, len(prices))]
+                    avg_gain = sum(gains[-14:]) / 14 if gains else 0
+                    avg_loss = sum(losses[-14:]) / 14 if losses else 0
+                    rs = avg_gain / avg_loss if avg_loss > 0 else 0
+                    rsi = 100 - (100 / (1 + rs))
+                    
+                    technical_indicators = {
+                        'sma_20': sma_20,
+                        'sma_50': sma_50,
+                        'rsi': rsi,
+                        'current_price': latest_technical.close_price,
+                        'price_trend': 'bullish' if sma_20 > sma_50 else 'bearish',
+                        'rsi_signal': 'overbought' if rsi > 70 else 'oversold' if rsi < 30 else 'neutral'
+                    }
+        except Exception as e:
+            technical_indicators = {'error': str(e)}
+        
+        # 5. Compose comprehensive prompt for OpenAI
+        prompt = f"""
+You are a professional forex analyst providing real-time market analysis. Analyze {pair} with the following data:
+
+TECHNICAL CONTEXT:
+- Current Price: {latest_technical.close_price if latest_technical else 'N/A'}
+- Technical Indicators: {technical_indicators}
+- Recent Price Action: {[f"{t.timestamp}: O:{t.open_price} H:{t.high_price} L:{t.low_price} C:{t.close_price}" for t in technical_context[-3:]] if technical_context else 'N/A'}
+
+FUNDAMENTAL CONTEXT:
+- ForexFactory Events: {fundamental_data.get('forexfactory_events', [])}
+- TradingEconomics Events: {fundamental_data.get('tradingeconomics_events', [])}
+
+STREAMING DATA:
+- Real-time Updates: {streaming_data if streaming_data else 'Not available'}
+
+Provide a concise, actionable analysis (2-3 paragraphs) including:
+1. Current market sentiment and direction
+2. Key support/resistance levels
+3. Risk factors and opportunities
+4. Specific trading recommendation (BUY/SELL/HOLD)
+5. Entry, stop-loss, and take-profit levels if applicable
+
+Be professional, concise, and actionable. Focus on immediate trading opportunities.
+"""
+        
+        # 6. Call OpenAI with enhanced context
+        openai_api = OpenAIAnalyzer()
+        ai_response = openai_api.client.chat.completions.create(
+            model=openai_api.model,
+            messages=[
+                {"role": "system", "content": "You are a professional forex analyst. Provide concise, actionable trading insights based on technical and fundamental analysis."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        ai_report = ai_response.choices[0].message.content
+        
+        # 7. Compile comprehensive response
+        response_data = {
+            'pair': pair,
+            'timestamp': datetime.utcnow().isoformat(),
+            'ai_report': ai_report,
+            'technical_data': {
+                'latest_candle': asdict(latest_technical) if latest_technical else {},
+                'indicators': technical_indicators,
+                'recent_candles': [asdict(t) for t in technical_context[-5:]] if technical_context else []
+            },
+            'fundamental_data': fundamental_data,
+            'streaming_data': streaming_data,
+            'analysis_metadata': {
+                'data_sources': ['stream_bot', 'forexfactory', 'tradingeconomics', 'openai'],
+                'analysis_type': 'comprehensive_real_time',
+                'confidence_score': 0.85  # Placeholder for confidence scoring
+            }
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'timestamp': datetime.utcnow().isoformat()}), 500
+
+@app.route('/api/streaming-candles/<pair>/<granularity>')
+def get_streaming_candles(pair, granularity):
+    """Get real-time streaming candles from the stream bot with WebSocket-like updates."""
+    try:
+        shared_store = get_shared_store()
+        
+        # Get latest market data from stream bot
+        market_data = shared_store.get_market_data(pair, limit=100)
+        
+        # Convert to candle format
+        candles = []
+        for data in market_data:
+            candles.append({
+                'x': data.timestamp,
+                'o': data.open_price,
+                'h': data.high_price,
+                'l': data.low_price,
+                'c': data.close_price,
+                'v': data.volume
+            })
+        
+        # Add real-time streaming indicator
+        response_data = {
+            'candles': candles,
+            'streaming': True,
+            'last_update': datetime.utcnow().isoformat(),
+            'pair': pair,
+            'granularity': granularity,
+            'data_source': 'stream_bot'
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001) 

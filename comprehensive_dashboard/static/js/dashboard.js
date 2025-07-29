@@ -5,6 +5,9 @@
 let systemRunning = false;
 let updateInterval = null;
 let priceChart = null;
+let chartStreamingInterval = null;
+let aiAnalysisInterval = null;
+let realTimeUpdatesActive = false;
 
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,11 +25,396 @@ function initializeDashboard() {
     
     // Initialize trade form
     initializeTradeForm();
+    
+    // Initialize streaming capabilities
+    initializeStreaming();
 }
 
 function updateTime() {
     const now = new Date();
     document.getElementById('current-time').textContent = now.toLocaleTimeString();
+}
+
+// ============================================================================
+// STREAMING INITIALIZATION
+// ============================================================================
+
+function initializeStreaming() {
+    // Initialize streaming state
+    realTimeUpdatesActive = false;
+    
+    // Set up event listeners for streaming controls
+    const startStreamingBtn = document.querySelector('button[onclick="startChartStreaming()"]');
+    const stopStreamingBtn = document.querySelector('button[onclick="stopChartStreaming()"]');
+    
+    if (startStreamingBtn) startStreamingBtn.disabled = false;
+    if (stopStreamingBtn) stopStreamingBtn.disabled = true;
+}
+
+// ============================================================================
+// ENHANCED AI ANALYSIS FUNCTIONS
+// ============================================================================
+
+async function loadEnhancedAIAnalysis() {
+    const pair = document.getElementById('ai-pair').value;
+    const analysisContainer = document.getElementById('ai-full-analysis');
+    const technicalContainer = document.getElementById('technical-indicators');
+    const fundamentalContainer = document.getElementById('fundamental-events');
+    const streamingContainer = document.getElementById('streaming-status');
+    const recommendationContainer = document.getElementById('ai-recommendation');
+    
+    // Show loading state
+    analysisContainer.innerHTML = '<div class="loading-spinner">🔄 Loading enhanced AI analysis...</div>';
+    technicalContainer.innerHTML = '<div class="loading-spinner">Loading technical data...</div>';
+    fundamentalContainer.innerHTML = '<div class="loading-spinner">Loading fundamental data...</div>';
+    streamingContainer.innerHTML = '<div class="loading-spinner">Checking streaming status...</div>';
+    recommendationContainer.innerHTML = '<div class="loading-spinner">Generating recommendation...</div>';
+    
+    try {
+        const response = await fetch(`/api/enhanced-ai-analysis/${pair}`);
+        const data = await response.json();
+        
+        if (data && !data.error) {
+            // Update analysis metadata
+            document.getElementById('analysis-timestamp').textContent = `Last Update: ${new Date(data.timestamp).toLocaleString()}`;
+            document.getElementById('data-sources').textContent = `Data Sources: ${data.analysis_metadata.data_sources.join(', ')}`;
+            document.getElementById('confidence-score').textContent = `Confidence: ${(data.analysis_metadata.confidence_score * 100).toFixed(1)}%`;
+            
+            // Display AI report
+            analysisContainer.innerHTML = `
+                <div class="ai-report">
+                    <div class="report-header">
+                        <h5>🤖 AI Analysis for ${pair}</h5>
+                        <span class="report-time">${new Date(data.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div class="report-content">
+                        ${data.ai_report.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+            
+            // Display technical indicators
+            if (data.technical_data && data.technical_data.indicators) {
+                const indicators = data.technical_data.indicators;
+                technicalContainer.innerHTML = `
+                    <div class="indicators-grid">
+                        <div class="indicator-item">
+                            <span class="indicator-label">Current Price:</span>
+                            <span class="indicator-value">${indicators.current_price || 'N/A'}</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">SMA 20:</span>
+                            <span class="indicator-value">${indicators.sma_20 ? indicators.sma_20.toFixed(5) : 'N/A'}</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">SMA 50:</span>
+                            <span class="indicator-value">${indicators.sma_50 ? indicators.sma_50.toFixed(5) : 'N/A'}</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">RSI:</span>
+                            <span class="indicator-value ${indicators.rsi_signal === 'overbought' ? 'text-danger' : indicators.rsi_signal === 'oversold' ? 'text-success' : ''}">${indicators.rsi ? indicators.rsi.toFixed(2) : 'N/A'}</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">Trend:</span>
+                            <span class="indicator-value ${indicators.price_trend === 'bullish' ? 'text-success' : 'text-danger'}">${indicators.price_trend || 'N/A'}</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">RSI Signal:</span>
+                            <span class="indicator-value">${indicators.rsi_signal || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                technicalContainer.innerHTML = '<p style="color: #e53e3e;">Technical data not available</p>';
+            }
+            
+            // Display fundamental events
+            if (data.fundamental_data && !data.fundamental_data.error) {
+                const ffEvents = data.fundamental_data.forexfactory_events || [];
+                const teEvents = data.fundamental_data.tradingeconomics_events || [];
+                
+                let fundamentalHtml = '<div class="fundamental-events">';
+                
+                if (ffEvents.length > 0) {
+                    fundamentalHtml += '<h6>ForexFactory Events:</h6><ul>';
+                    ffEvents.forEach(event => {
+                        fundamentalHtml += `<li><strong>${event.Currency}</strong>: ${event.Event} (${event.Impact})</li>`;
+                    });
+                    fundamentalHtml += '</ul>';
+                }
+                
+                if (teEvents.length > 0) {
+                    fundamentalHtml += '<h6>TradingEconomics Events:</h6><ul>';
+                    teEvents.forEach(event => {
+                        fundamentalHtml += `<li><strong>${event.Currency}</strong>: ${event.Event} (${event.Impact})</li>`;
+                    });
+                    fundamentalHtml += '</ul>';
+                }
+                
+                if (ffEvents.length === 0 && teEvents.length === 0) {
+                    fundamentalHtml += '<p>No recent fundamental events</p>';
+                }
+                
+                fundamentalHtml += '</div>';
+                fundamentalContainer.innerHTML = fundamentalHtml;
+            } else {
+                fundamentalContainer.innerHTML = '<p style="color: #e53e3e;">Fundamental data not available</p>';
+            }
+            
+            // Display streaming status
+            if (data.streaming_data) {
+                streamingContainer.innerHTML = `
+                    <div class="streaming-status">
+                        <div class="status-item">
+                            <span class="status-indicator active"></span>
+                            <span>Streaming Active</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Data Source: ${data.analysis_metadata.data_sources.includes('stream_bot') ? 'Stream Bot' : 'OANDA API'}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                streamingContainer.innerHTML = `
+                    <div class="streaming-status">
+                        <div class="status-item">
+                            <span class="status-indicator inactive"></span>
+                            <span>Streaming Inactive</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Using OANDA API data</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Extract and display recommendation
+            const reportText = data.ai_report.toLowerCase();
+            let recommendation = 'HOLD';
+            let recommendationClass = 'text-warning';
+            
+            if (reportText.includes('buy') || reportText.includes('long')) {
+                recommendation = 'BUY';
+                recommendationClass = 'text-success';
+            } else if (reportText.includes('sell') || reportText.includes('short')) {
+                recommendation = 'SELL';
+                recommendationClass = 'text-danger';
+            }
+            
+            recommendationContainer.innerHTML = `
+                <div class="recommendation">
+                    <div class="recommendation-signal ${recommendationClass}">
+                        <h3>${recommendation}</h3>
+                    </div>
+                    <div class="recommendation-summary">
+                        <p>${data.ai_report.split('.')[0]}.</p>
+                    </div>
+                </div>
+            `;
+            
+        } else {
+            analysisContainer.innerHTML = `<p style="color: #e53e3e;">Error: ${data.error || 'Unknown error'}</p>`;
+            technicalContainer.innerHTML = '<p style="color: #e53e3e;">Technical data error</p>';
+            fundamentalContainer.innerHTML = '<p style="color: #e53e3e;">Fundamental data error</p>';
+            streamingContainer.innerHTML = '<p style="color: #e53e3e;">Streaming status error</p>';
+            recommendationContainer.innerHTML = '<p style="color: #e53e3e;">Recommendation error</p>';
+        }
+    } catch (error) {
+        console.error('Error loading enhanced AI analysis:', error);
+        analysisContainer.innerHTML = '<p style="color: #e53e3e;">Error loading enhanced AI analysis</p>';
+        technicalContainer.innerHTML = '<p style="color: #e53e3e;">Technical data error</p>';
+        fundamentalContainer.innerHTML = '<p style="color: #e53e3e;">Fundamental data error</p>';
+        streamingContainer.innerHTML = '<p style="color: #e53e3e;">Streaming status error</p>';
+        recommendationContainer.innerHTML = '<p style="color: #e53e3e;">Recommendation error</p>';
+    }
+}
+
+function startRealTimeUpdates() {
+    if (realTimeUpdatesActive) return;
+    
+    realTimeUpdatesActive = true;
+    const pair = document.getElementById('ai-pair').value;
+    
+    // Start periodic AI analysis updates
+    aiAnalysisInterval = setInterval(() => {
+        loadEnhancedAIAnalysis();
+    }, 30000); // Update every 30 seconds
+    
+    // Update button states
+    document.querySelector('button[onclick="startRealTimeUpdates()"]').disabled = true;
+    document.querySelector('button[onclick="stopRealTimeUpdates()"]').disabled = false;
+    
+    showNotification('Real-time AI updates started', 'success');
+}
+
+function stopRealTimeUpdates() {
+    if (!realTimeUpdatesActive) return;
+    
+    realTimeUpdatesActive = false;
+    
+    // Stop periodic updates
+    if (aiAnalysisInterval) {
+        clearInterval(aiAnalysisInterval);
+        aiAnalysisInterval = null;
+    }
+    
+    // Update button states
+    document.querySelector('button[onclick="startRealTimeUpdates()"]').disabled = false;
+    document.querySelector('button[onclick="stopRealTimeUpdates()"]').disabled = true;
+    
+    showNotification('Real-time AI updates stopped', 'info');
+}
+
+// ============================================================================
+// ENHANCED CHART FUNCTIONS WITH STREAMING
+// ============================================================================
+
+async function loadStreamingChartData() {
+    const pair = document.getElementById('chart-pair').value;
+    const timeframe = document.getElementById('chart-timeframe').value;
+    
+    try {
+        const response = await fetch(`/api/streaming-candles/${pair}/${timeframe}`);
+        const data = await response.json();
+        
+        if (data && data.candles && data.candles.length > 0) {
+            createEnhancedCandlestickChart(data.candles, pair, data.streaming);
+            updateChartInfo(data.candles);
+            
+            // Show streaming status
+            const streamingStatus = data.streaming ? '🟢 Live Streaming' : '🔴 Historical Data';
+            showNotification(`Chart loaded: ${streamingStatus}`, 'info');
+        } else {
+            document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #a0aec0;">No streaming data available</p>';
+        }
+    } catch (error) {
+        console.error('Error loading streaming chart data:', error);
+        document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #e53e3e;">Error loading streaming chart data</p>';
+    }
+}
+
+function createEnhancedCandlestickChart(candles, pair, isStreaming = false) {
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    
+    // Destroy existing chart
+    if (window.priceChart) {
+        window.priceChart.destroy();
+    }
+    
+    // Prepare data for financial chart
+    const chartData = candles.map(candle => ({
+        x: new Date(candle.x),
+        o: parseFloat(candle.o),
+        h: parseFloat(candle.h),
+        l: parseFloat(candle.l),
+        c: parseFloat(candle.c)
+    }));
+    
+    // Create enhanced candlestick chart
+    window.priceChart = new Chart(ctx, {
+        type: 'candlestick',
+        data: {
+            datasets: [{
+                label: `${pair} ${isStreaming ? '(Live)' : '(Historical)'}`,
+                data: chartData,
+                borderColor: isStreaming ? '#10B981' : '#3B82F6',
+                backgroundColor: isStreaming ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 1,
+                upColor: '#10B981',
+                downColor: '#EF4444',
+                upBorderColor: '#10B981',
+                downBorderColor: '#EF4444'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            const data = context.raw;
+                            return [
+                                `Open: ${data.o.toFixed(5)}`,
+                                `High: ${data.h.toFixed(5)}`,
+                                `Low: ${data.l.toFixed(5)}`,
+                                `Close: ${data.c.toFixed(5)}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'minute',
+                        displayFormats: {
+                            minute: 'HH:mm'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Price'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(5);
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+}
+
+function startChartStreaming() {
+    if (chartStreamingInterval) return;
+    
+    const pair = document.getElementById('chart-pair').value;
+    const timeframe = document.getElementById('chart-timeframe').value;
+    
+    // Start periodic chart updates
+    chartStreamingInterval = setInterval(() => {
+        loadStreamingChartData();
+    }, 5000); // Update every 5 seconds
+    
+    // Update button states
+    document.querySelector('button[onclick="startChartStreaming()"]').disabled = true;
+    document.querySelector('button[onclick="stopChartStreaming()"]').disabled = false;
+    
+    showNotification('Chart streaming started', 'success');
+}
+
+function stopChartStreaming() {
+    if (!chartStreamingInterval) return;
+    
+    // Stop periodic updates
+    clearInterval(chartStreamingInterval);
+    chartStreamingInterval = null;
+    
+    // Update button states
+    document.querySelector('button[onclick="startChartStreaming()"]').disabled = false;
+    document.querySelector('button[onclick="stopChartStreaming()"]').disabled = true;
+    
+    showNotification('Chart streaming stopped', 'info');
 }
 
 // ============================================================================
@@ -51,10 +439,10 @@ function showSection(sectionName) {
     // Load specific data based on section
     switch(sectionName) {
         case 'chart-info':
-            loadChartData();
+            loadStreamingChartData();
             break;
         case 'ai-analysis':
-            loadAIAnalysis();
+            loadEnhancedAIAnalysis();
             break;
         case 'technical-analysis':
             loadTechnicalData();
@@ -262,67 +650,40 @@ function updateStatusIndicators(status) {
 async function loadChartData() {
     const pair = document.getElementById('chart-pair').value;
     const timeframe = document.getElementById('chart-timeframe').value;
-    const count = document.getElementById('chart-count').value;
-    
     try {
-        const response = await fetch(`/api/prices/${pair}/${timeframe}/${count}`);
+        const response = await fetch(`/api/live-candles/${pair}/${timeframe}`);
         const data = await response.json();
-        
-        if (data && data.candles) {
-            createPriceChart(data.candles);
-            updateChartInfo(data.candles);
+        if (data && data.candles && data.candles.length > 0) {
+            createCandlestickChart(data.candles);
         } else {
             document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #a0aec0;">No price data available</p>';
         }
     } catch (error) {
-        console.error('Error loading chart data:', error);
         document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #e53e3e;">Error loading chart data</p>';
     }
 }
 
-function createPriceChart(candles) {
+function createCandlestickChart(candles) {
     const ctx = document.getElementById('price-chart').getContext('2d');
-    
-    if (priceChart) {
-        priceChart.destroy();
+    if (window.priceChart) {
+        window.priceChart.destroy();
     }
-    
-    const chartData = {
-        labels: candles.map(candle => new Date(candle.time)),
-        datasets: [{
-            label: 'Price',
-            data: candles.map(candle => ({
-                x: new Date(candle.time),
-                o: parseFloat(candle.mid.o),
-                h: parseFloat(candle.mid.h),
-                l: parseFloat(candle.mid.l),
-                c: parseFloat(candle.mid.c)
-            })),
-            type: 'candlestick'
-        }]
-    };
-    
-    priceChart = new Chart(ctx, {
+    window.priceChart = new Chart(ctx, {
         type: 'candlestick',
-        data: chartData,
+        data: {
+            datasets: [{
+                label: 'Candlestick',
+                data: candles
+            }]
+        },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute'
-                    }
-                },
-                y: {
-                    position: 'right'
-                }
-            },
             plugins: {
-                legend: {
-                    display: false
-                }
+                legend: { display: false }
+            },
+            scales: {
+                x: { type: 'time', time: { unit: 'hour' } },
+                y: { beginAtZero: false }
             }
         }
     });
@@ -361,21 +722,17 @@ function updateChartInfo(candles) {
 
 async function loadAIAnalysis() {
     const pair = document.getElementById('ai-pair').value;
-    const horizon = document.getElementById('trade-horizon').value;
-    
     try {
-        const response = await fetch(`/api/analysis/${pair}?horizon=${horizon}`);
+        const response = await fetch(`/api/ai-analysis/${pair}`);
         const data = await response.json();
-        
         if (data && !data.error) {
-            displayAIAnalysis(data);
-            displayFullAIAnalysis(data);
+            document.getElementById('ai-market-analysis').innerHTML = `<pre>${data.ai_report}</pre>`;
+            document.getElementById('ai-full-analysis').innerHTML = `<pre>${data.ai_report}</pre>`;
         } else {
             document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
             document.getElementById('ai-full-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
         }
     } catch (error) {
-        console.error('Error loading AI analysis:', error);
         document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
         document.getElementById('ai-full-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
     }
