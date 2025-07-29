@@ -273,27 +273,8 @@ function stopRealTimeUpdates() {
 // ============================================================================
 
 async function loadStreamingChartData() {
-    const pair = document.getElementById('chart-pair').value;
-    const timeframe = document.getElementById('chart-timeframe').value;
-    
-    try {
-        const response = await fetch(`/api/streaming-candles/${pair}/${timeframe}`);
-        const data = await response.json();
-        
-        if (data && data.candles && data.candles.length > 0) {
-            createEnhancedCandlestickChart(data.candles, pair, data.streaming);
-            updateChartInfo(data.candles);
-            
-            // Show streaming status
-            const streamingStatus = data.streaming ? '🟢 Live Streaming' : '🔴 Historical Data';
-            showNotification(`Chart loaded: ${streamingStatus}`, 'info');
-        } else {
-            document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #a0aec0;">No streaming data available</p>';
-        }
-    } catch (error) {
-        console.error('Error loading streaming chart data:', error);
-        document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #e53e3e;">Error loading streaming chart data</p>';
-    }
+    // Simply use the working historical data function
+    await loadChartData();
 }
 
 function createEnhancedCandlestickChart(candles, pair, isStreaming = false) {
@@ -391,19 +372,16 @@ function createEnhancedCandlestickChart(candles, pair, isStreaming = false) {
 function startChartStreaming() {
     if (chartStreamingInterval) return;
     
-    const pair = document.getElementById('chart-pair').value;
-    const timeframe = document.getElementById('chart-timeframe').value;
-    
-    // Start periodic chart updates
+    // Start periodic chart updates using historical data
     chartStreamingInterval = setInterval(() => {
-        loadStreamingChartData();
-    }, 5000); // Update every 5 seconds
+        loadChartData(); // Use historical data instead of streaming
+    }, 15000); // Update every 15 seconds
     
     // Update button states
     document.querySelector('button[onclick="startChartStreaming()"]').disabled = true;
     document.querySelector('button[onclick="stopChartStreaming()"]').disabled = false;
     
-    showNotification('Chart streaming started', 'success');
+    showNotification('Chart auto-refresh started (historical data)', 'success');
 }
 
 function stopChartStreaming() {
@@ -442,7 +420,7 @@ function showSection(sectionName) {
     // Load specific data based on section
     switch(sectionName) {
         case 'chart-info':
-            loadStreamingChartData();
+            loadChartData(); // Use historical data instead of streaming
             break;
         case 'ai-analysis':
             loadEnhancedAIAnalysis();
@@ -653,13 +631,14 @@ function updateStatusIndicators(status) {
 async function loadChartData() {
     const pair = document.getElementById('chart-pair').value;
     const timeframe = document.getElementById('chart-timeframe').value;
+    const count = document.getElementById('chart-count').value;
     
-    console.log(`Loading chart data for ${pair} ${timeframe}`);
+    console.log(`Loading chart data for ${pair} ${timeframe} (count: ${count})`);
     
     try {
         // Use historical data from OANDA API (working solution)
         console.log('Loading historical data from OANDA API...');
-        const response = await fetch(`/api/live-candles/${pair}/${timeframe}`);
+        const response = await fetch(`/api/live-candles/${pair}/${timeframe}?count=${count}`);
         const data = await response.json();
         
         if (data && data.candles && data.candles.length > 0) {

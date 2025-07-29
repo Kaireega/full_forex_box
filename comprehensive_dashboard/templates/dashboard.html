@@ -95,7 +95,7 @@
                 <div class="chart-controls">
                     <div class="control-group">
                         <label for="chart-pair">Currency Pair:</label>
-                        <select id="chart-pair" onchange="loadChartData()">
+                        <select id="chart-pair" onchange="loadStreamingChartData()">
                             <option value="EUR_USD">EUR/USD</option>
                             <option value="GBP_USD">GBP/USD</option>
                             <option value="USD_JPY">USD/JPY</option>
@@ -107,7 +107,7 @@
                     </div>
                     <div class="control-group">
                         <label for="chart-timeframe">Timeframe:</label>
-                        <select id="chart-timeframe" onchange="loadChartData()">
+                        <select id="chart-timeframe" onchange="loadStreamingChartData()">
                             <option value="M1">1 Minute</option>
                             <option value="M5">5 Minutes</option>
                             <option value="M15" selected>15 Minutes</option>
@@ -119,7 +119,7 @@
                     </div>
                     <div class="control-group">
                         <label for="chart-count">Candles:</label>
-                        <select id="chart-count" onchange="loadChartData()">
+                        <select id="chart-count" onchange="loadStreamingChartData()">
                             <option value="50">50</option>
                             <option value="100" selected>100</option>
                             <option value="200">200</option>

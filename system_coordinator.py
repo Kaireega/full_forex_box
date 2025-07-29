@@ -48,9 +48,13 @@ class SystemCoordinator:
         logger.info("✅ System Coordinator started")
         
         try:
+            status_counter = 0
             while self.is_running:
                 time.sleep(10)
-                self._print_status()
+                status_counter += 1
+                # Only print status every 6 minutes (36 iterations * 10 seconds)
+                if status_counter % 36 == 0:
+                    self._print_status()
         except KeyboardInterrupt:
             logger.info("🛑 Stopping System Coordinator...")
             self.stop()
@@ -208,7 +212,7 @@ class SystemCoordinator:
     
     def _print_status(self):
         """Print current system status."""
-        logger.info("📊 System Status:")
+        logger.info("📊 System Status (every 6 minutes):")
         for system, info in self.systems.items():
             status_emoji = "✅" if info['status'] == 'running' else "❌" if info['status'] == 'stopped' else "⚠️"
             logger.info(f"  {status_emoji} {system}: {info['status']}")

@@ -740,12 +740,14 @@ def stop_system():
 
 @app.route('/api/live-candles/<pair>/<granularity>')
 def get_live_candles(pair, granularity):
-    """Get latest 100 candles for the pair from OANDA API."""
+    """Get latest candles for the pair from OANDA API."""
     try:
-        print(f"Fetching candles for {pair} {granularity}")
+        # Get count from query parameter, default to 100
+        count = request.args.get('count', 100, type=int)
+        print(f"Fetching {count} candles for {pair} {granularity}")
         
         # Use the web_api_candles method which is known to work
-        result = oanda_api.web_api_candles(pair, granularity, 100)
+        result = oanda_api.web_api_candles(pair, granularity, count)
         
         if result and 'candles' in result and result['candles']:
             candles = result['candles']
