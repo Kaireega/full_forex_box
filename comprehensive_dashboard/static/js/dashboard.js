@@ -361,20 +361,82 @@ function updateChartInfo(candles) {
 
 async function loadAIAnalysis() {
     const pair = document.getElementById('ai-pair').value;
+    const horizon = document.getElementById('trade-horizon').value;
     
     try {
-        const response = await fetch(`/api/analysis/${pair}`);
+        const response = await fetch(`/api/analysis/${pair}?horizon=${horizon}`);
         const data = await response.json();
         
         if (data && !data.error) {
             displayAIAnalysis(data);
+            displayFullAIAnalysis(data);
         } else {
             document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
+            document.getElementById('ai-full-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
         }
     } catch (error) {
         console.error('Error loading AI analysis:', error);
         document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
+        document.getElementById('ai-full-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
     }
+}
+
+function displayFullAIAnalysis(data) {
+    const fullAnalysisContainer = document.getElementById('ai-full-analysis');
+    
+    const analysisText = `
+=== COMPREHENSIVE AI ANALYSIS REPORT ===
+Generated: ${new Date().toLocaleString()}
+Currency Pair: ${data.pair}
+Trading Horizon: ${document.getElementById('trade-horizon').value.toUpperCase()}
+
+=== MARKET OVERVIEW ===
+${data.market_overview || 'Market overview not available'}
+
+=== TECHNICAL ANALYSIS ===
+Trend Direction: ${data.technical.trend.toUpperCase()}
+RSI (14): ${data.technical.rsi} - ${data.technical.rsi_signal}
+MACD Signal: ${data.technical.macd_signal.toUpperCase()}
+Support Level: ${data.technical.support}
+Resistance Level: ${data.technical.resistance}
+Volatility (ATR): ${data.technical.volatility}
+
+=== PRICE ACTION ANALYSIS ===
+Direction: ${data.price_action.direction.toUpperCase()}
+Change: ${data.price_action.change_percent}%
+Momentum: ${data.price_action.momentum || 'Not available'}
+
+=== PATTERN ANALYSIS ===
+Detected Patterns: ${data.patterns.join(', ') || 'None detected'}
+Pattern Reliability: ${data.pattern_reliability || 'Not available'}
+
+=== FUNDAMENTAL FACTORS ===
+${data.fundamental_analysis || 'Fundamental analysis not available'}
+
+=== RISK ASSESSMENT ===
+Risk Level: ${data.risk_assessment.level || 'Not available'}
+Risk Factors: ${data.risk_assessment.factors || 'Not available'}
+Market Conditions: ${data.risk_assessment.market_conditions || 'Not available'}
+
+=== TRADING RECOMMENDATION ===
+Action: ${data.recommendation}
+Confidence: ${data.confidence || 'N/A'}%
+Reasoning: ${data.reasoning || 'Not available'}
+
+=== POSITION SIZING SUGGESTIONS ===
+${data.position_sizing || 'Position sizing not available'}
+
+=== KEY LEVELS TO WATCH ===
+${data.key_levels || 'Key levels not available'}
+
+=== AI INSIGHTS ===
+${data.ai_insights || 'AI insights not available'}
+
+=== DISCLAIMER ===
+This analysis is for informational purposes only. Always conduct your own research and consider your risk tolerance before trading. Past performance does not guarantee future results.
+    `;
+    
+    fullAnalysisContainer.textContent = analysisText;
 }
 
 function displayAIAnalysis(data) {
@@ -408,6 +470,9 @@ function displayAIAnalysis(data) {
             <strong>Recommendation:</strong> <span class="text-${data.recommendation === 'BUY' ? 'success' : data.recommendation === 'SELL' ? 'danger' : 'warning'}">${data.recommendation}</span>
         </div>
         <div class="analysis-item">
+            <strong>Confidence:</strong> ${data.confidence || 'N/A'}%
+        </div>
+        <div class="analysis-item">
             <strong>Patterns Detected:</strong> ${data.patterns.join(', ') || 'None'}
         </div>
         <div class="analysis-item">
@@ -427,6 +492,9 @@ function displayAIAnalysis(data) {
         </div>
         <div class="analysis-item">
             <strong>Market Condition:</strong> ${data.technical.trend} market
+        </div>
+        <div class="analysis-item">
+            <strong>Horizon:</strong> ${document.getElementById('trade-horizon').value}
         </div>
     `;
 }
@@ -667,6 +735,194 @@ function initializeTradeForm() {
         e.preventDefault();
         await placeTrade();
     });
+    
+    // Initialize form with default values
+    updateTradePrices();
+    
+    // Add event listeners for real-time calculations
+    document.getElementById('trade-units').addEventListener('input', updateOrderInfo);
+    document.getElementById('trade-stop-loss').addEventListener('input', updateOrderInfo);
+    document.getElementById('trade-take-profit').addEventListener('input', updateOrderInfo);
+}
+
+async function updateTradePrices() {
+    const pair = document.getElementById('trade-pair').value;
+    const direction = document.getElementById('trade-direction').value;
+    
+    if (!pair || !direction) {
+        clearPriceDisplay();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/prices/${pair}/M1/1`);
+        const data = await response.json();
+        
+        if (data && data.candles && data.candles.length > 0) {
+            const latest = data.candles[0];
+            const bid = parseFloat(latest.mid.c) - 0.0001; // Approximate bid
+            const ask = parseFloat(latest.mid.c) + 0.0001; // Approximate ask
+            const spread = ask - bid;
+            
+            document.getElementById('current-bid').textContent = bid.toFixed(5);
+            document.getElementById('current-ask').textContent = ask.toFixed(5);
+            document.getElementById('current-spread').textContent = spread.toFixed(5);
+            
+            // Auto-populate stop loss and take profit based on direction
+            if (direction === 'buy') {
+                const stopLoss = (bid - 0.0050).toFixed(5); // 50 pips below bid
+                const takeProfit = (ask + 0.0050).toFixed(5); // 50 pips above ask
+                document.getElementById('trade-stop-loss').value = stopLoss;
+                document.getElementById('trade-take-profit').value = takeProfit;
+            } else {
+                const stopLoss = (ask + 0.0050).toFixed(5); // 50 pips above ask
+                const takeProfit = (bid - 0.0050).toFixed(5); // 50 pips below bid
+                document.getElementById('trade-stop-loss').value = stopLoss;
+                document.getElementById('trade-take-profit').value = takeProfit;
+            }
+            
+            updateOrderInfo();
+        }
+    } catch (error) {
+        console.error('Error updating trade prices:', error);
+        clearPriceDisplay();
+    }
+}
+
+function clearPriceDisplay() {
+    document.getElementById('current-bid').textContent = '--';
+    document.getElementById('current-ask').textContent = '--';
+    document.getElementById('current-spread').textContent = '--';
+}
+
+function updateOrderInfo() {
+    const units = parseFloat(document.getElementById('trade-units').value) || 0;
+    const stopLoss = document.getElementById('trade-stop-loss').value;
+    const takeProfit = document.getElementById('trade-take-profit').value;
+    const direction = document.getElementById('trade-direction').value;
+    const pair = document.getElementById('trade-pair').value;
+    
+    if (!units || !stopLoss || !takeProfit || !direction || !pair) {
+        clearOrderInfo();
+        return;
+    }
+    
+    // Calculate pip value (simplified - would need actual pip values per pair)
+    const pipValue = calculatePipValue(pair, units);
+    
+    // Calculate margin (assuming 20:1 leverage)
+    const marginUsed = (units * 0.0001) / 20; // Simplified calculation
+    
+    // Calculate stop loss and take profit in pips
+    const currentPrice = direction === 'buy' ? 
+        parseFloat(document.getElementById('current-ask').textContent) :
+        parseFloat(document.getElementById('current-bid').textContent);
+    
+    const stopLossPips = Math.abs(currentPrice - parseFloat(stopLoss)) * 10000;
+    const takeProfitPips = Math.abs(currentPrice - parseFloat(takeProfit)) * 10000;
+    
+    // Calculate USD values
+    const stopLossUSD = stopLossPips * pipValue;
+    const takeProfitUSD = takeProfitPips * pipValue;
+    
+    // Update display
+    document.getElementById('margin-amount').value = marginUsed.toFixed(2);
+    document.getElementById('margin-used').textContent = `$${marginUsed.toFixed(2)}`;
+    document.getElementById('pip-value').textContent = `$${pipValue.toFixed(2)} USD`;
+    document.getElementById('trade-value').textContent = `$${(units * 0.0001).toFixed(2)} USD`;
+    
+    // Update stop loss and take profit details
+    document.getElementById('stop-loss-pips').textContent = `${stopLossPips.toFixed(1)} pips`;
+    document.getElementById('stop-loss-usd').textContent = `$${stopLossUSD.toFixed(2)}`;
+    document.getElementById('take-profit-pips').textContent = `${takeProfitPips.toFixed(1)} pips`;
+    document.getElementById('take-profit-usd').textContent = `$${takeProfitUSD.toFixed(2)}`;
+    
+    // Calculate risk/reward ratio
+    const riskRewardRatio = takeProfitUSD / stopLossUSD;
+    document.getElementById('risk-reward').textContent = `${riskRewardRatio.toFixed(2)}:1`;
+    
+    // Update button text
+    const btnText = direction.toUpperCase();
+    const btnDetails = `${units} ${pair} MKT`;
+    document.getElementById('trade-btn-text').textContent = btnText;
+    document.getElementById('trade-btn-details').textContent = btnDetails;
+}
+
+function clearOrderInfo() {
+    document.getElementById('margin-amount').value = '';
+    document.getElementById('margin-used').textContent = '--';
+    document.getElementById('pip-value').textContent = '-- USD';
+    document.getElementById('trade-value').textContent = '-- USD';
+    document.getElementById('stop-loss-pips').textContent = '-- pips';
+    document.getElementById('stop-loss-usd').textContent = '-- USD';
+    document.getElementById('take-profit-pips').textContent = '-- pips';
+    document.getElementById('take-profit-usd').textContent = '-- USD';
+    document.getElementById('risk-reward').textContent = '--';
+    document.getElementById('trade-btn-text').textContent = 'Place Trade';
+    document.getElementById('trade-btn-details').textContent = '--';
+}
+
+function calculatePipValue(pair, units) {
+    // Simplified pip value calculation
+    // In reality, this would depend on the specific pair and account currency
+    const basePipValue = 0.0001; // 1 pip = 0.0001 for most pairs
+    return units * basePipValue * 10; // Simplified calculation
+}
+
+// Units Calculator Functions
+function openUnitsCalculator() {
+    const modal = document.getElementById('units-calculator-modal');
+    modal.style.display = 'block';
+    
+    // Pre-populate with account balance if available
+    const accountBalance = document.getElementById('account-balance').textContent;
+    if (accountBalance && accountBalance !== '--') {
+        document.getElementById('calc-account-balance').value = parseFloat(accountBalance.replace('$', ''));
+    }
+    
+    // Pre-populate pip value based on current trade
+    const pair = document.getElementById('trade-pair').value;
+    const units = parseFloat(document.getElementById('trade-units').value) || 1000;
+    const pipValue = calculatePipValue(pair, units);
+    document.getElementById('calc-pip-value').value = pipValue.toFixed(2);
+    
+    // Add event listeners for real-time calculation
+    document.getElementById('calc-account-balance').addEventListener('input', calculateUnits);
+    document.getElementById('calc-risk-percentage').addEventListener('input', calculateUnits);
+    document.getElementById('calc-stop-loss-pips').addEventListener('input', calculateUnits);
+    document.getElementById('calc-pip-value').addEventListener('input', calculateUnits);
+    
+    calculateUnits();
+}
+
+function closeUnitsCalculator() {
+    const modal = document.getElementById('units-calculator-modal');
+    modal.style.display = 'none';
+}
+
+function calculateUnits() {
+    const accountBalance = parseFloat(document.getElementById('calc-account-balance').value) || 0;
+    const riskPercentage = parseFloat(document.getElementById('calc-risk-percentage').value) || 0;
+    const stopLossPips = parseFloat(document.getElementById('calc-stop-loss-pips').value) || 0;
+    const pipValue = parseFloat(document.getElementById('calc-pip-value').value) || 0;
+    
+    if (accountBalance > 0 && riskPercentage > 0 && stopLossPips > 0 && pipValue > 0) {
+        const riskAmount = accountBalance * (riskPercentage / 100);
+        const units = riskAmount / (stopLossPips * pipValue);
+        document.getElementById('calculated-units').textContent = Math.round(units);
+    } else {
+        document.getElementById('calculated-units').textContent = '--';
+    }
+}
+
+function applyCalculatedUnits() {
+    const calculatedUnits = document.getElementById('calculated-units').textContent;
+    if (calculatedUnits !== '--') {
+        document.getElementById('trade-units').value = calculatedUnits;
+        updateOrderInfo();
+        closeUnitsCalculator();
+        showNotification('Units applied to trade form!', 'success');
+    }
 }
 
 async function placeTrade() {
@@ -701,6 +957,8 @@ async function placeTrade() {
         if (result.success) {
             showNotification('Trade placed successfully!', 'success');
             document.getElementById('place-trade-form').reset();
+            clearPriceDisplay();
+            clearOrderInfo();
             loadAccountData();
         } else {
             showNotification('Failed to place trade: ' + result.error, 'error');

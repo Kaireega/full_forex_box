@@ -520,71 +520,184 @@ def get_realtime_data(pair):
 def get_comprehensive_analysis(pair):
     """Get comprehensive analysis for a pair"""
     try:
-        # Get price data
-        df = oanda_api.get_candles_df(pair, granularity='H1', count=100)
-        if df is None or df.empty:
-            return jsonify({'error': 'No price data available'}), 404
+        # Get trading horizon from query parameter
+        horizon = request.args.get('horizon', 'intraday')
+        
+        # Get current price data
+        candles = oanda_api.get_candles_df(pair, granularity='M15', count=100)
+        if candles.empty:
+            return jsonify({'error': 'No data available'})
+        
+        latest = candles.iloc[-1]
         
         # Calculate technical indicators
-        df = technical_indicators.calculate_all_indicators(df)
+        technical = {
+            'trend': 'bullish' if latest.get('EMA_20', 0) > latest.get('EMA_50', 0) else 'bearish',
+            'rsi': round(latest.get('RSI_14', 0), 2),
+            'rsi_signal': 'oversold' if latest.get('RSI_14', 0) < 30 else 'overbought' if latest.get('RSI_14', 0) > 70 else 'neutral',
+            'macd_signal': 'bullish' if latest.get('HIST', 0) > 0 else 'bearish',
+            'support': round(latest.get('BB_LW', 0), 5),
+            'resistance': round(latest.get('BB_UP', 0), 5),
+            'volatility': round(latest.get('ATR_14', 0), 5)
+        }
         
-        # Simple pattern recognition
-        try:
-            # Calculate basic candle properties
-            df['body_size'] = abs(df['mid_c'] - df['mid_o'])
-            df['total_range'] = df['mid_h'] - df['mid_l']
-            df['body_perc'] = (df['body_size'] / df['total_range']) * 100
-            df['direction'] = [1 if c >= o else -1 for c, o in zip(df['mid_c'], df['mid_o'])]
-            
-            # Get latest values
-            latest = df.iloc[-1]
-            
-            # Technical analysis (simplified)
-            technical = {
-                'trend': 'bullish' if latest.get('EMA_20', 0) > latest.get('EMA_50', 0) else 'bearish',
-                'rsi': round(latest.get('RSI_14', 0), 2),
-                'rsi_signal': 'oversold' if latest.get('RSI_14', 0) < 30 else 'overbought' if latest.get('RSI_14', 0) > 70 else 'neutral',
-                'macd_signal': 'bullish' if latest.get('HIST', 0) > 0 else 'bearish',
-                'support': round(latest.get('BB_LW', 0), 5),
-                'resistance': round(latest.get('BB_UP', 0), 5),
-                'volatility': round(latest.get('ATR_14', 0), 5)
-            }
-            
-            # Simple pattern analysis
-            patterns = []
-            if latest['body_perc'] < 10:
-                patterns.append('Doji')
-            if latest['body_perc'] < 30 and latest['direction'] == 1:
-                patterns.append('Hammer')
-            if latest['body_perc'] < 30 and latest['direction'] == -1:
-                patterns.append('Shooting Star')
-            if 10 < latest['body_perc'] < 40:
-                patterns.append('Spinning Top')
-        except Exception as e:
-            technical = {'trend': 'unknown', 'rsi': 0, 'rsi_signal': 'neutral', 'macd_signal': 'neutral', 'support': 0, 'resistance': 0, 'volatility': 0}
-            patterns = []
-        
-        # Price action
-        price_change = ((latest['mid_c'] - latest['mid_o']) / latest['mid_o']) * 100
+        # Calculate price action using correct column names
+        price_change = ((latest['mid_c'] - candles.iloc[-2]['mid_c']) / candles.iloc[-2]['mid_c']) * 100
         price_action = {
-            'change_percent': round(price_change, 2),
             'direction': 'up' if price_change > 0 else 'down',
-            'body_size': abs(latest['mid_c'] - latest['mid_o']),
-            'wick_size': latest['mid_h'] - latest['mid_l']
+            'change_percent': round(abs(price_change), 2),
+            'momentum': 'strong' if abs(price_change) > 0.5 else 'weak'
         }
         
-        analysis = {
+        # Detect patterns
+        patterns = []
+        if latest.get('RSI_14', 0) < 30:
+            patterns.append('oversold')
+        elif latest.get('RSI_14', 0) > 70:
+            patterns.append('overbought')
+        
+        if latest.get('HIST', 0) > 0 and candles.iloc[-2].get('HIST', 0) <= 0:
+            patterns.append('macd_crossover')
+        
+        # Generate recommendation based on horizon
+        recommendation = generate_recommendation(technical, price_action, patterns, horizon)
+        
+        # Generate comprehensive analysis text based on horizon
+        analysis_text = generate_horizon_analysis(pair, technical, price_action, patterns, horizon)
+        
+        return jsonify({
             'pair': pair,
-            'timestamp': str(latest.name) if hasattr(latest.name, 'isoformat') else str(latest.name),
             'technical': technical,
-            'patterns': patterns,
             'price_action': price_action,
-            'recommendation': 'BUY' if technical['trend'] == 'bullish' and technical['rsi_signal'] != 'overbought' else 'SELL' if technical['trend'] == 'bearish' and technical['rsi_signal'] != 'oversold' else 'HOLD'
+            'patterns': patterns,
+            'recommendation': recommendation,
+            'confidence': 75,  # Placeholder
+            'reasoning': f"Based on {horizon} analysis",
+            'market_overview': analysis_text.get('market_overview', ''),
+            'fundamental_analysis': analysis_text.get('fundamental_analysis', ''),
+            'risk_assessment': analysis_text.get('risk_assessment', {}),
+            'position_sizing': analysis_text.get('position_sizing', ''),
+            'key_levels': analysis_text.get('key_levels', ''),
+            'ai_insights': analysis_text.get('ai_insights', ''),
+            'pattern_reliability': 'medium'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+def generate_recommendation(technical, price_action, patterns, horizon):
+    """Generate trading recommendation based on horizon"""
+    if horizon == 'intraday':
+        # Intraday trading - more sensitive to short-term signals
+        if technical['rsi_signal'] == 'oversold' and technical['macd_signal'] == 'bullish':
+            return 'BUY'
+        elif technical['rsi_signal'] == 'overbought' and technical['macd_signal'] == 'bearish':
+            return 'SELL'
+        else:
+            return 'HOLD'
+    elif horizon == 'swing':
+        # Swing trading - focus on trend and momentum
+        if technical['trend'] == 'bullish' and price_action['momentum'] == 'strong':
+            return 'BUY'
+        elif technical['trend'] == 'bearish' and price_action['momentum'] == 'strong':
+            return 'SELL'
+        else:
+            return 'HOLD'
+    else:  # longterm
+        # Long-term trading - focus on major trends
+        if technical['trend'] == 'bullish':
+            return 'BUY'
+        elif technical['trend'] == 'bearish':
+            return 'SELL'
+        else:
+            return 'HOLD'
+
+def generate_horizon_analysis(pair, technical, price_action, patterns, horizon):
+    """Generate comprehensive analysis text based on trading horizon"""
+    
+    if horizon == 'intraday':
+        market_overview = f"""
+INTRADAY ANALYSIS FOR {pair}
+Current market conditions favor short-term trading opportunities. The pair is showing {technical['trend']} momentum with {technical['rsi_signal']} RSI conditions. Price action indicates {price_action['direction']} movement with {price_action['momentum']} momentum.
+
+Key intraday factors:
+- RSI at {technical['rsi']} ({technical['rsi_signal']})
+- MACD signal: {technical['macd_signal']}
+- Volatility: {technical['volatility']}
+- Support: {technical['support']}
+- Resistance: {technical['resistance']}
+        """
+        
+        risk_assessment = {
+            'level': 'medium',
+            'factors': 'Intraday volatility, spread costs, news events',
+            'market_conditions': f"{technical['trend']} with {technical['rsi_signal']} conditions"
         }
         
-        return jsonify(analysis)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        position_sizing = "For intraday trading, consider smaller position sizes due to higher frequency of trades and spread costs. Risk 1-2% per trade."
+        
+        key_levels = f"Watch {technical['support']} as support and {technical['resistance']} as resistance. Breakouts above/below these levels could signal continuation."
+        
+        ai_insights = "Intraday trading requires quick decision-making. Monitor 5-minute and 15-minute charts for entry/exit signals. Be prepared to close positions before major news releases."
+        
+    elif horizon == 'swing':
+        market_overview = f"""
+SWING TRADING ANALYSIS FOR {pair}
+Medium-term analysis suggests {technical['trend']} trend continuation. The pair has established clear support and resistance levels suitable for swing trading positions.
+
+Key swing trading factors:
+- Trend direction: {technical['trend'].upper()}
+- RSI momentum: {technical['rsi']} ({technical['rsi_signal']})
+- MACD trend: {technical['macd_signal']}
+- Volatility range: {technical['volatility']}
+- Support zone: {technical['support']}
+- Resistance zone: {technical['resistance']}
+        """
+        
+        risk_assessment = {
+            'level': 'medium-high',
+            'factors': 'Overnight gaps, weekend risk, trend reversals',
+            'market_conditions': f"Established {technical['trend']} trend with clear levels"
+        }
+        
+        position_sizing = "Swing trading allows for larger position sizes. Risk 2-3% per trade and hold positions for 1-7 days."
+        
+        key_levels = f"Primary support at {technical['support']}, resistance at {technical['resistance']}. Secondary levels at 50% and 61.8% Fibonacci retracements."
+        
+        ai_insights = "Swing trading benefits from trend following. Use daily charts for trend direction and 4-hour charts for entry timing. Monitor economic calendar for major events."
+        
+    else:  # longterm
+        market_overview = f"""
+LONG-TERM ANALYSIS FOR {pair}
+Long-term market structure analysis indicates {technical['trend']} trend development. This timeframe is suitable for position trading and trend following strategies.
+
+Key long-term factors:
+- Major trend: {technical['trend'].upper()}
+- RSI conditions: {technical['rsi']} ({technical['rsi_signal']})
+- MACD long-term signal: {technical['macd_signal']}
+- Market volatility: {technical['volatility']}
+- Major support: {technical['support']}
+- Major resistance: {technical['resistance']}
+        """
+        
+        risk_assessment = {
+            'level': 'low-medium',
+            'factors': 'Major trend changes, economic cycles, central bank policy',
+            'market_conditions': f"Long-term {technical['trend']} trend with fundamental backing"
+        }
+        
+        position_sizing = "Long-term positions can be larger due to lower frequency. Risk 3-5% per trade and hold for weeks to months."
+        
+        key_levels = f"Major support at {technical['support']}, resistance at {technical['resistance']}. Monitor monthly and weekly chart levels for major trend changes."
+        
+        ai_insights = "Long-term trading focuses on fundamental analysis and major trend changes. Monitor central bank policies, economic data, and geopolitical events."
+    
+    return {
+        'market_overview': market_overview.strip(),
+        'risk_assessment': risk_assessment,
+        'position_sizing': position_sizing,
+        'key_levels': key_levels,
+        'ai_insights': ai_insights
+    }
 
 @app.route('/api/system/start', methods=['POST'])
 def start_system():

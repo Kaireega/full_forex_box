@@ -217,7 +217,7 @@ show_logs() {
         
         echo "=== Stream Bot Log ==="
         tail -10 logs/stream_bot.log 2>/dev/null || echo "No stream bot logs"
-        echo ""
+            echo ""
         
         echo "=== Dashboard Log ==="
         tail -10 logs/shared_data_store.log 2>/dev/null || echo "No dashboard logs"

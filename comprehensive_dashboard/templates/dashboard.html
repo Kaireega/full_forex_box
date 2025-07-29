@@ -165,10 +165,25 @@
                             <option value="NZD_USD">NZD/USD</option>
                         </select>
                     </div>
+                    <div class="control-group">
+                        <label for="trade-horizon">Trading Horizon:</label>
+                        <select id="trade-horizon" onchange="loadAIAnalysis()">
+                            <option value="intraday">Intraday (Day Trade)</option>
+                            <option value="swing">Swing Trade</option>
+                            <option value="longterm">Long-Term Trade</option>
+                        </select>
+                    </div>
                     <button class="btn" onclick="loadAIAnalysis()">Analyze with AI</button>
                 </div>
                 
                 <div class="ai-analysis-results">
+                    <div class="analysis-panel full-width">
+                        <h4>📄 Full AI Analysis Report</h4>
+                        <div id="ai-full-analysis">
+                            <p style="opacity: 0.7;">Select a pair and trading horizon, then click "Analyze with AI" to get comprehensive market insights.</p>
+                        </div>
+                    </div>
+                    
                     <div class="analysis-panel">
                         <h4>Market Analysis</h4>
                         <div id="ai-market-analysis">
@@ -307,11 +322,28 @@
                     <!-- Place New Trade Form -->
                     <div class="trade-section">
                         <h4>Place New Trade</h4>
+                        <div class="current-prices">
+                            <div class="price-display">
+                                <div class="price-item">
+                                    <span class="price-label">Current Bid:</span>
+                                    <span class="price-value" id="current-bid">--</span>
+                                </div>
+                                <div class="price-item">
+                                    <span class="price-label">Current Ask:</span>
+                                    <span class="price-value" id="current-ask">--</span>
+                                </div>
+                                <div class="price-item">
+                                    <span class="price-label">Spread:</span>
+                                    <span class="price-value" id="current-spread">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <form class="trade-form" id="place-trade-form">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="trade-pair">Currency Pair:</label>
-                                    <select id="trade-pair" required>
+                                    <select id="trade-pair" required onchange="updateTradePrices()">
                                         <option value="">Select Pair</option>
                                         <option value="EUR_USD">EUR/USD</option>
                                         <option value="GBP_USD">GBP/USD</option>
@@ -324,28 +356,81 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="trade-direction">Direction:</label>
-                                    <select id="trade-direction" required>
+                                    <select id="trade-direction" required onchange="updateTradePrices()">
                                         <option value="">Select Direction</option>
                                         <option value="buy">Buy</option>
                                         <option value="sell">Sell</option>
                                     </select>
                                 </div>
                             </div>
+                            
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="trade-units">Units:</label>
-                                    <input type="number" id="trade-units" step="0.01" required>
+                                    <div class="units-input-group">
+                                        <input type="number" id="trade-units" step="0.01" required placeholder="1000">
+                                        <button type="button" class="units-calculator" onclick="openUnitsCalculator()">📊</button>
+                                    </div>
                                 </div>
                                 <div class="form-group">
+                                    <label for="margin-amount">Margin USD:</label>
+                                    <input type="number" id="margin-amount" step="0.01" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
                                     <label for="trade-stop-loss">Stop Loss:</label>
-                                    <input type="number" id="trade-stop-loss" step="0.00001">
+                                    <div class="stop-loss-group">
+                                        <input type="number" id="trade-stop-loss" step="0.00001" placeholder="Auto-calculated">
+                                        <div class="stop-loss-details">
+                                            <span id="stop-loss-pips">-- pips</span>
+                                            <span id="stop-loss-usd">-- USD</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="trade-take-profit">Take Profit:</label>
-                                    <input type="number" id="trade-take-profit" step="0.00001">
+                                    <div class="take-profit-group">
+                                        <input type="number" id="trade-take-profit" step="0.00001" placeholder="Auto-calculated">
+                                        <div class="take-profit-details">
+                                            <span id="take-profit-pips">-- pips</span>
+                                            <span id="take-profit-usd">-- USD</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn">Place Trade</button>
+                            
+                            <div class="order-info">
+                                <h5>Order Information</h5>
+                                <div class="order-details">
+                                    <div class="order-item">
+                                        <span class="order-label">Margin Used:</span>
+                                        <span class="order-value" id="margin-used">--</span>
+                                    </div>
+                                    <div class="order-item">
+                                        <span class="order-label">Leverage:</span>
+                                        <span class="order-value">20:1</span>
+                                    </div>
+                                    <div class="order-item">
+                                        <span class="order-label">Pip Value:</span>
+                                        <span class="order-value" id="pip-value">-- USD</span>
+                                    </div>
+                                    <div class="order-item">
+                                        <span class="order-label">Trade Value:</span>
+                                        <span class="order-value" id="trade-value">-- USD</span>
+                                    </div>
+                                    <div class="order-item">
+                                        <span class="order-label">Risk/Reward:</span>
+                                        <span class="order-value" id="risk-reward">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-large" id="place-trade-btn">
+                                <span id="trade-btn-text">Place Trade</span>
+                                <span id="trade-btn-details">--</span>
+                            </button>
                         </form>
                     </div>
                     
@@ -364,6 +449,36 @@
         <div class="footer">
             <p>Forex Trading Platform | Professional Real-time Trading System</p>
             <p>AI predictions are for informational purposes only. Always conduct your own analysis.</p>
+        </div>
+    </div>
+    
+    <!-- Units Calculator Modal -->
+    <div id="units-calculator-modal" class="units-calculator-modal">
+        <div class="units-calculator-content">
+            <h4>📊 Units Calculator</h4>
+            <form id="units-calculator-form">
+                <div class="form-group">
+                    <label for="calc-account-balance">Account Balance (USD):</label>
+                    <input type="number" id="calc-account-balance" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="calc-risk-percentage">Risk Percentage (%):</label>
+                    <input type="number" id="calc-risk-percentage" step="0.1" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label for="calc-stop-loss-pips">Stop Loss (Pips):</label>
+                    <input type="number" id="calc-stop-loss-pips" step="0.1" value="50" required>
+                </div>
+                <div class="form-group">
+                    <label for="calc-pip-value">Pip Value (USD):</label>
+                    <input type="number" id="calc-pip-value" step="0.01" required>
+                </div>
+                <div class="calculator-result">
+                    <strong>Recommended Units: <span id="calculated-units">--</span></strong>
+                </div>
+                <button type="button" class="btn" onclick="applyCalculatedUnits()">Apply to Trade</button>
+                <button type="button" class="btn btn-stop" onclick="closeUnitsCalculator()">Cancel</button>
+            </form>
         </div>
     </div>
     
