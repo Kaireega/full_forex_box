@@ -1,73 +1,69 @@
-// Comprehensive Forex Trading Dashboard JavaScript
+// ============================================================================
+// FOREX TRADING DASHBOARD - MODULAR STRUCTURE
+// ============================================================================
 
-// Global variables
-let priceChart = null;
-let currentPair = 'EUR_USD';
-let currentGranularity = 'H1';
-let currentCount = 100;
-let updateInterval = null;
 let systemRunning = false;
+let updateInterval = null;
+let priceChart = null;
 
-// Initialize dashboard
+// Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeDashboard();
-    updateTime();
-    setInterval(updateTime, 1000);
-    setInterval(loadAccountData, 60000); // Update account data every minute
 });
 
-// Initialize dashboard
 function initializeDashboard() {
+    updateTime();
+    setInterval(updateTime, 1000);
     loadSystemStatus();
-    loadAccountData();
+    startDataUpdates();
+    
+    // Set default dates for calendars
     setDefaultDates();
-    showNotification('Dashboard loaded successfully!', 'success');
+    
+    // Initialize trade form
+    initializeTradeForm();
 }
 
-// Update current time
 function updateTime() {
     const now = new Date();
     document.getElementById('current-time').textContent = now.toLocaleTimeString();
 }
 
-// Tab navigation
-function showTab(tabName) {
-    // Hide all tab contents
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabContents.forEach(content => content.classList.remove('active'));
+// ============================================================================
+// NAVIGATION FUNCTIONS
+// ============================================================================
+
+function showSection(sectionName) {
+    // Hide all content sections
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => section.classList.remove('active'));
     
-    // Remove active class from all tab buttons
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    tabButtons.forEach(btn => btn.classList.remove('active'));
+    // Remove active class from all nav buttons
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach(btn => btn.classList.remove('active'));
     
-    // Show selected tab content
-    document.getElementById(tabName + '-tab').classList.add('active');
+    // Show selected section
+    document.getElementById(sectionName + '-section').classList.add('active');
     
     // Add active class to clicked button
     event.target.classList.add('active');
     
-    // Load specific data based on tab
-    switch(tabName) {
-        case 'charts':
+    // Load specific data based on section
+    switch(sectionName) {
+        case 'chart-info':
             loadChartData();
             break;
-        case 'technicals':
+        case 'ai-analysis':
+            loadAIAnalysis();
+            break;
+        case 'technical-analysis':
             loadTechnicalData();
             break;
-        case 'calendars':
-            setDefaultDates();
-            break;
-        case 'analysis':
-            loadComprehensiveAnalysis();
-            break;
-        case 'trades':
-            loadTradeData();
-            break;
-        case 'alerts':
-            loadTradeAlerts();
-            break;
-        case 'account':
+        case 'account-data':
             loadAccountData();
+            break;
+        case 'trade-execution':
+            loadTradeData();
             break;
     }
 }
@@ -86,7 +82,6 @@ async function startSystem() {
     startBtn.disabled = true;
     
     try {
-        // Call the backend to start all systems
         const response = await fetch('/api/system/start', {
             method: 'POST',
             headers: {
@@ -101,7 +96,6 @@ async function startSystem() {
             document.getElementById('stop-btn').disabled = false;
             startBtn.disabled = true;
             
-            // Immediately refresh system status to show updated indicators
             await loadSystemStatus();
             startDataUpdates();
             
@@ -127,7 +121,6 @@ async function stopSystem() {
     stopBtn.disabled = true;
     
     try {
-        // Call the backend to stop all systems
         const response = await fetch('/api/system/stop', {
             method: 'POST',
             headers: {
@@ -142,10 +135,10 @@ async function stopSystem() {
             document.getElementById('start-btn').disabled = false;
             stopBtn.disabled = true;
             
-            updateSystemStatus(false);
+            await loadSystemStatus();
             stopDataUpdates();
             
-            showNotification('All systems stopped successfully!', 'info');
+            showNotification('All systems stopped successfully!', 'success');
         } else {
             throw new Error(result.message || 'Failed to stop systems');
         }
@@ -164,30 +157,26 @@ function refreshData() {
     
     refreshText.style.display = 'none';
     refreshLoading.style.display = 'inline-block';
+    refreshBtn.disabled = true;
     
     Promise.all([
         loadSystemStatus(),
         loadAccountData(),
-        loadChartData(),
-        loadTechnicalData()
-    ]).then(() => {
-        showNotification('Data refreshed successfully!', 'success');
-    }).catch(error => {
-        showNotification('Failed to refresh data: ' + error.message, 'error');
-    }).finally(() => {
+        loadChartData()
+    ]).finally(() => {
         refreshText.style.display = 'inline';
         refreshLoading.style.display = 'none';
+        refreshBtn.disabled = false;
+        showNotification('Data refreshed successfully!', 'success');
     });
 }
 
 function startDataUpdates() {
     if (updateInterval) clearInterval(updateInterval);
     updateInterval = setInterval(() => {
-        // Always refresh system status to show current state
         loadSystemStatus();
         if (systemRunning) {
             loadAccountData();
-            updateSummaryData();
         }
     }, 5000); // Update every 5 seconds
 }
@@ -211,10 +200,9 @@ async function loadSystemStatus() {
         updateSystemStatus(status.running);
         updateStatusIndicators(status);
         
-        return status;
+        document.getElementById('last-update').textContent = 'Last Update: ' + new Date().toLocaleTimeString();
     } catch (error) {
         console.error('Error loading system status:', error);
-        updateSystemStatus(false);
     }
 }
 
@@ -224,98 +212,85 @@ function updateSystemStatus(running) {
     const statusText = document.getElementById('system-status-text');
     
     if (running) {
-        statusIndicator.className = 'status-indicator status-running';
+        statusIndicator.className = 'status-indicator running';
         statusText.textContent = 'System Running';
     } else {
-        statusIndicator.className = 'status-indicator status-stopped';
+        statusIndicator.className = 'status-indicator stopped';
         statusText.textContent = 'System Stopped';
     }
 }
 
 function updateStatusIndicators(status) {
-    // Update stream bot status
+    // Stream Bot Status
     const streamBotIndicator = document.getElementById('stream-bot-status');
     const streamBotText = document.getElementById('stream-bot-status-text');
-    
     if (status.stream_bot) {
-        streamBotIndicator.className = 'status-indicator status-running';
+        streamBotIndicator.className = 'status-indicator running';
         streamBotText.textContent = 'Stream Bot Running';
     } else {
-        streamBotIndicator.className = 'status-indicator status-stopped';
+        streamBotIndicator.className = 'status-indicator stopped';
         streamBotText.textContent = 'Stream Bot Stopped';
     }
     
-    // Update AI analysis status
+    // AI Analysis Status
     const analysisIndicator = document.getElementById('analysis-status');
     const analysisText = document.getElementById('analysis-status-text');
-    
     if (status.ai_analysis) {
-        analysisIndicator.className = 'status-indicator status-running';
+        analysisIndicator.className = 'status-indicator running';
         analysisText.textContent = 'AI Analysis Running';
     } else {
-        analysisIndicator.className = 'status-indicator status-stopped';
+        analysisIndicator.className = 'status-indicator stopped';
         analysisText.textContent = 'AI Analysis Stopped';
     }
     
-    // Update data streaming status
+    // Data Streaming Status
     const dataStreamingIndicator = document.getElementById('data-streaming-status');
     const dataStreamingText = document.getElementById('data-streaming-status-text');
-    
     if (status.data_streaming) {
-        dataStreamingIndicator.className = 'status-indicator status-running';
-        dataStreamingText.textContent = 'Data Streaming';
+        dataStreamingIndicator.className = 'status-indicator running';
+        dataStreamingText.textContent = 'Data Streaming Running';
     } else {
-        dataStreamingIndicator.className = 'status-indicator status-stopped';
-        dataStreamingText.textContent = 'Data Stopped';
+        dataStreamingIndicator.className = 'status-indicator stopped';
+        dataStreamingText.textContent = 'Data Streaming Stopped';
     }
-    
-    // Update last update time
-    document.getElementById('last-update').textContent = 'Last Update: ' + new Date().toLocaleTimeString();
 }
 
 // ============================================================================
-// CHART FUNCTIONS
+// CHART INFO FUNCTIONS
 // ============================================================================
 
 async function loadChartData() {
-    const pair = document.getElementById('pair-selector').value;
-    const granularity = document.getElementById('granularity-selector').value;
-    const count = document.getElementById('count-selector').value;
-    
-    currentPair = pair;
-    currentGranularity = granularity;
-    currentCount = parseInt(count);
+    const pair = document.getElementById('chart-pair').value;
+    const timeframe = document.getElementById('chart-timeframe').value;
+    const count = document.getElementById('chart-count').value;
     
     try {
-        const response = await fetch(`/api/prices/${pair}/${granularity}/${count}`);
+        const response = await fetch(`/api/prices/${pair}/${timeframe}/${count}`);
         const data = await response.json();
         
         if (data && data.candles) {
             createPriceChart(data.candles);
             updateChartInfo(data.candles);
         } else {
-            showNotification('No price data available', 'error');
+            document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #a0aec0;">No price data available</p>';
         }
     } catch (error) {
         console.error('Error loading chart data:', error);
-        showNotification('Failed to load chart data', 'error');
+        document.getElementById('price-chart').innerHTML = '<p style="text-align: center; color: #e53e3e;">Error loading chart data</p>';
     }
 }
 
 function createPriceChart(candles) {
     const ctx = document.getElementById('price-chart').getContext('2d');
     
-    // Destroy existing chart
     if (priceChart) {
         priceChart.destroy();
     }
     
-    const chartType = document.getElementById('chart-type').value;
-    
     const chartData = {
         labels: candles.map(candle => new Date(candle.time)),
         datasets: [{
-            label: currentPair,
+            label: 'Price',
             data: candles.map(candle => ({
                 x: new Date(candle.time),
                 o: parseFloat(candle.mid.o),
@@ -323,70 +298,34 @@ function createPriceChart(candles) {
                 l: parseFloat(candle.mid.l),
                 c: parseFloat(candle.mid.c)
             })),
-            borderColor: '#4ade80',
-            backgroundColor: 'rgba(74, 222, 128, 0.1)',
-            borderWidth: 1
+            type: 'candlestick'
         }]
     };
     
-    const config = {
-        type: chartType === 'candlestick' ? 'candlestick' : chartType,
+    priceChart = new Chart(ctx, {
+        type: 'candlestick',
         data: chartData,
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: 'white'
-                    }
-                }
-            },
             scales: {
                 x: {
                     type: 'time',
                     time: {
-                        unit: getTimeUnit(currentGranularity)
-                    },
-                    ticks: {
-                        color: 'white'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        unit: 'minute'
                     }
                 },
                 y: {
-                    ticks: {
-                        color: 'white'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    }
+                    position: 'right'
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
                 }
             }
         }
-    };
-    
-    priceChart = new Chart(ctx, config);
-}
-
-function updateChartType() {
-    if (priceChart) {
-        loadChartData();
-    }
-}
-
-function getTimeUnit(granularity) {
-    switch(granularity) {
-        case 'M1': return 'minute';
-        case 'M5': return 'minute';
-        case 'M15': return 'minute';
-        case 'M30': return 'minute';
-        case 'H1': return 'hour';
-        case 'H4': return 'hour';
-        case 'D': return 'day';
-        default: return 'hour';
-    }
+    });
 }
 
 function updateChartInfo(candles) {
@@ -400,14 +339,96 @@ function updateChartInfo(candles) {
     const change = currentPrice - previousPrice;
     const changePercent = (change / previousPrice) * 100;
     
-    const high = Math.max(...candles.map(c => parseFloat(c.mid.h)));
-    const low = Math.min(...candles.map(c => parseFloat(c.mid.l)));
-    
     document.getElementById('current-price').textContent = currentPrice.toFixed(5);
     document.getElementById('price-change').textContent = `${change >= 0 ? '+' : ''}${change.toFixed(5)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
-    document.getElementById('price-change').style.color = change >= 0 ? '#4ade80' : '#f44336';
-    document.getElementById('price-high').textContent = high.toFixed(5);
-    document.getElementById('price-low').textContent = low.toFixed(5);
+    document.getElementById('price-high').textContent = parseFloat(latest.mid.h).toFixed(5);
+    document.getElementById('price-low').textContent = parseFloat(latest.mid.l).toFixed(5);
+    
+    // Color coding for change
+    const changeElement = document.getElementById('price-change');
+    if (change > 0) {
+        changeElement.className = 'info-value text-success';
+    } else if (change < 0) {
+        changeElement.className = 'info-value text-danger';
+    } else {
+        changeElement.className = 'info-value';
+    }
+}
+
+// ============================================================================
+// AI ANALYSIS FUNCTIONS
+// ============================================================================
+
+async function loadAIAnalysis() {
+    const pair = document.getElementById('ai-pair').value;
+    
+    try {
+        const response = await fetch(`/api/analysis/${pair}`);
+        const data = await response.json();
+        
+        if (data && !data.error) {
+            displayAIAnalysis(data);
+        } else {
+            document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
+        }
+    } catch (error) {
+        console.error('Error loading AI analysis:', error);
+        document.getElementById('ai-market-analysis').innerHTML = '<p style="color: #e53e3e;">Error loading AI analysis</p>';
+    }
+}
+
+function displayAIAnalysis(data) {
+    // Market Analysis
+    const marketAnalysis = document.getElementById('ai-market-analysis');
+    marketAnalysis.innerHTML = `
+        <div class="analysis-item">
+            <strong>Trend:</strong> <span class="text-${data.technical.trend === 'bullish' ? 'success' : 'danger'}">${data.technical.trend.toUpperCase()}</span>
+        </div>
+        <div class="analysis-item">
+            <strong>RSI:</strong> ${data.technical.rsi} (${data.technical.rsi_signal})
+        </div>
+        <div class="analysis-item">
+            <strong>MACD Signal:</strong> <span class="text-${data.technical.macd_signal === 'bullish' ? 'success' : 'danger'}">${data.technical.macd_signal.toUpperCase()}</span>
+        </div>
+        <div class="analysis-item">
+            <strong>Support:</strong> ${data.technical.support}
+        </div>
+        <div class="analysis-item">
+            <strong>Resistance:</strong> ${data.technical.resistance}
+        </div>
+        <div class="analysis-item">
+            <strong>Volatility:</strong> ${data.technical.volatility}
+        </div>
+    `;
+    
+    // Trading Recommendation
+    const recommendation = document.getElementById('ai-recommendation');
+    recommendation.innerHTML = `
+        <div class="analysis-item">
+            <strong>Recommendation:</strong> <span class="text-${data.recommendation === 'BUY' ? 'success' : data.recommendation === 'SELL' ? 'danger' : 'warning'}">${data.recommendation}</span>
+        </div>
+        <div class="analysis-item">
+            <strong>Patterns Detected:</strong> ${data.patterns.join(', ') || 'None'}
+        </div>
+        <div class="analysis-item">
+            <strong>Price Action:</strong> ${data.price_action.direction.toUpperCase()} (${data.price_action.change_percent}%)
+        </div>
+    `;
+    
+    // Risk Assessment
+    const riskAssessment = document.getElementById('ai-risk-assessment');
+    const riskLevel = data.technical.volatility > 0.005 ? 'High' : data.technical.volatility > 0.002 ? 'Medium' : 'Low';
+    riskAssessment.innerHTML = `
+        <div class="analysis-item">
+            <strong>Risk Level:</strong> <span class="text-${riskLevel === 'High' ? 'danger' : riskLevel === 'Medium' ? 'warning' : 'success'}">${riskLevel}</span>
+        </div>
+        <div class="analysis-item">
+            <strong>Volatility:</strong> ${data.technical.volatility}
+        </div>
+        <div class="analysis-item">
+            <strong>Market Condition:</strong> ${data.technical.trend} market
+        </div>
+    `;
 }
 
 // ============================================================================
@@ -415,338 +436,250 @@ function updateChartInfo(candles) {
 // ============================================================================
 
 async function loadTechnicalData() {
-    const pair = document.getElementById('tech-pair-selector').value;
-    const granularity = document.getElementById('tech-granularity-selector').value;
+    const pair = document.getElementById('tech-pair').value;
+    const timeframe = document.getElementById('tech-timeframe').value;
     
     try {
-        // Load technical indicators
-        const techResponse = await fetch(`/api/technicals/${pair}/${granularity}`);
-        const techData = await techResponse.json();
+        const [technicalsResponse, patternsResponse] = await Promise.all([
+            fetch(`/api/technicals/${pair}/${timeframe}`),
+            fetch(`/api/patterns/${pair}/${timeframe}`)
+        ]);
         
-        if (techData.error) {
-            throw new Error(techData.error);
+        const technicals = await technicalsResponse.json();
+        const patterns = await patternsResponse.json();
+        
+        if (technicals && !technicals.error) {
+            displayTechnicalIndicators(technicals);
         }
         
-        displayTechnicalIndicators(techData);
-        
-        // Load candlestick patterns
-        const patternResponse = await fetch(`/api/patterns/${pair}/${granularity}`);
-        const patternData = await patternResponse.json();
-        
-        if (patternData.error) {
-            throw new Error(patternData.error);
+        if (patterns && !patterns.error) {
+            displayCandlestickPatterns(patterns);
         }
-        
-        displayCandlestickPatterns(patternData);
-        
     } catch (error) {
         console.error('Error loading technical data:', error);
-        showNotification('Failed to load technical data', 'error');
     }
 }
 
 function displayTechnicalIndicators(data) {
-    const container = document.getElementById('technical-indicators');
-    
-    const indicators = [
-        { name: 'RSI', value: data.rsi, color: data.rsi < 30 ? '#4ade80' : data.rsi > 70 ? '#f44336' : '#ff9800' },
-        { name: 'MACD', value: data.macd, color: '#60a5fa' },
-        { name: 'MACD Signal', value: data.macd_signal, color: '#60a5fa' },
-        { name: 'EMA 20', value: data.ema_20, color: '#4ade80' },
-        { name: 'EMA 50', value: data.ema_50, color: '#ff9800' },
-        { name: 'EMA 200', value: data.ema_200, color: '#9c27b0' },
-        { name: 'SMA 20', value: data.sma_20, color: '#4ade80' },
-        { name: 'SMA 50', value: data.sma_50, color: '#ff9800' },
-        { name: 'Bollinger Upper', value: data.bollinger_upper, color: '#f44336' },
-        { name: 'Bollinger Lower', value: data.bollinger_lower, color: '#4ade80' },
-        { name: 'Stochastic K', value: data.stoch_k, color: '#60a5fa' },
-        { name: 'Stochastic D', value: data.stoch_d, color: '#ff9800' },
-        { name: 'ATR', value: data.atr, color: '#9c27b0' },
-        { name: 'ADX', value: data.adx, color: '#e91e63' }
-    ];
-    
-    container.innerHTML = indicators.map(indicator => `
+    // Momentum Indicators
+    const momentumContainer = document.getElementById('momentum-indicators');
+    momentumContainer.innerHTML = `
         <div class="indicator-item">
-            <span class="indicator-name">${indicator.name}:</span>
-            <span class="indicator-value" style="color: ${indicator.color}">${indicator.value}</span>
+            <strong>RSI:</strong> ${data.rsi}
         </div>
-    `).join('');
-}
-
-function displayCandlestickPatterns(data) {
-    const container = document.getElementById('candlestick-patterns');
-    
-    const patterns = [
-        { name: 'Doji', detected: data.doji },
-        { name: 'Hammer', detected: data.hammer },
-        { name: 'Shooting Star', detected: data.shooting_star },
-        { name: 'Bullish Engulfing', detected: data.engulfing_bullish },
-        { name: 'Bearish Engulfing', detected: data.engulfing_bearish },
-        { name: 'Morning Star', detected: data.morning_star },
-        { name: 'Evening Star', detected: data.evening_star },
-        { name: 'Three White Soldiers', detected: data.three_white_soldiers },
-        { name: 'Three Black Crows', detected: data.three_black_crows }
-    ];
-    
-    container.innerHTML = patterns.map(pattern => `
-        <div class="pattern-item">
-            <span class="pattern-name">${pattern.name}:</span>
-            <span class="pattern-status ${pattern.detected ? 'detected' : 'not-detected'}">
-                ${pattern.detected ? '✅ Detected' : '❌ Not Detected'}
-            </span>
+        <div class="indicator-item">
+            <strong>Stochastic K:</strong> ${data.stoch_k}
         </div>
-    `).join('');
+        <div class="indicator-item">
+            <strong>Stochastic D:</strong> ${data.stoch_d}
+        </div>
+        <div class="indicator-item">
+            <strong>MACD:</strong> ${data.macd}
+        </div>
+        <div class="indicator-item">
+            <strong>MACD Signal:</strong> ${data.macd_signal}
+        </div>
+        <div class="indicator-item">
+            <strong>MACD Histogram:</strong> ${data.macd_histogram}
+        </div>
+    `;
+    
+    // Trend Indicators
+    const trendContainer = document.getElementById('trend-indicators');
+    trendContainer.innerHTML = `
+        <div class="indicator-item">
+            <strong>EMA 20:</strong> ${data.ema_20}
+        </div>
+        <div class="indicator-item">
+            <strong>EMA 50:</strong> ${data.ema_50}
+        </div>
+        <div class="indicator-item">
+            <strong>EMA 200:</strong> ${data.ema_200}
+        </div>
+        <div class="indicator-item">
+            <strong>SMA 20:</strong> ${data.sma_20}
+        </div>
+        <div class="indicator-item">
+            <strong>SMA 50:</strong> ${data.sma_50}
+        </div>
+        <div class="indicator-item">
+            <strong>ADX:</strong> ${data.adx}
+        </div>
+    `;
+    
+    // Volatility Indicators
+    const volatilityContainer = document.getElementById('volatility-indicators');
+    volatilityContainer.innerHTML = `
+        <div class="indicator-item">
+            <strong>ATR:</strong> ${data.atr}
+        </div>
+        <div class="indicator-item">
+            <strong>Bollinger Upper:</strong> ${data.bollinger_upper}
+        </div>
+        <div class="indicator-item">
+            <strong>Bollinger Middle:</strong> ${data.bollinger_middle}
+        </div>
+        <div class="indicator-item">
+            <strong>Bollinger Lower:</strong> ${data.bollinger_lower}
+        </div>
+    `;
 }
 
-// ============================================================================
-// CALENDAR FUNCTIONS
-// ============================================================================
-
-function setDefaultDates() {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+function displayCandlestickPatterns(patterns) {
+    const patternsContainer = document.getElementById('candlestick-patterns');
+    const detectedPatterns = [];
     
-    document.getElementById('te-start-date').value = today.toISOString().split('T')[0];
-    document.getElementById('te-end-date').value = tomorrow.toISOString().split('T')[0];
-    
-    document.getElementById('ff-month').value = today.toISOString().slice(0, 7);
-}
-
-async function loadTECalendar() {
-    const startDate = document.getElementById('te-start-date').value;
-    const endDate = document.getElementById('te-end-date').value;
-    
-    if (!startDate || !endDate) {
-        showNotification('Please select both start and end dates', 'error');
-        return;
+    for (const [pattern, detected] of Object.entries(patterns)) {
+        if (detected) {
+            detectedPatterns.push(pattern.replace('_', ' ').toUpperCase());
+        }
     }
     
-    try {
-        const response = await fetch(`/api/te/calendar/${startDate}/${endDate}`);
-        const data = await response.json();
-        
-        displayTECalendar(data);
-    } catch (error) {
-        console.error('Error loading TE calendar:', error);
-        showNotification('Failed to load TradingEconomics calendar', 'error');
-    }
-}
-
-function displayTECalendar(data) {
-    const container = document.getElementById('te-calendar-data');
-    
-    if (!data || data.length === 0) {
-        container.innerHTML = '<p style="opacity: 0.7;">No calendar events found for the selected dates.</p>';
-        return;
-    }
-    
-    container.innerHTML = data.map(event => `
-        <div class="calendar-item">
-            <div class="calendar-time">${event.time || event.date || 'N/A'}</div>
-            <div class="calendar-title">${event.event}</div>
-            <div class="calendar-impact ${event.impact?.toLowerCase() || 'low'}">${event.impact || 'Low'}</div>
-            <div class="calendar-currency">${event.currency}</div>
-            ${event.actual || event.forecast ? `
-                <div class="calendar-data">
-                    <span>Actual: ${event.actual || 'N/A'}</span>
-                    <span>Forecast: ${event.forecast || 'N/A'}</span>
-                    <span>Previous: ${event.previous || 'N/A'}</span>
+    if (detectedPatterns.length > 0) {
+        patternsContainer.innerHTML = `
+            <div class="pattern-item">
+                <strong>Detected Patterns:</strong>
+            </div>
+            ${detectedPatterns.map(pattern => `
+                <div class="pattern-item text-success">
+                    ✓ ${pattern}
                 </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-async function loadFFCalendar() {
-    const monthInput = document.getElementById('ff-month').value;
-    
-    if (!monthInput) {
-        showNotification('Please select a month', 'error');
-        return;
+            `).join('')}
+        `;
+    } else {
+        patternsContainer.innerHTML = `
+            <div class="pattern-item">
+                <strong>No significant patterns detected</strong>
+            </div>
+        `;
     }
-    
-    try {
-        const months = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
-        const [year, month] = monthInput.split("-");
-        const monthIndex = parseInt(month, 10) - 1;
-        const formattedMonth = `${months[monthIndex]}${year}`;
-        
-        const response = await fetch(`/api/ff/calendar/${formattedMonth}`);
-        const data = await response.json();
-        
-        displayFFCalendar(data);
-    } catch (error) {
-        console.error('Error loading FF calendar:', error);
-        showNotification('Failed to load ForexFactory calendar', 'error');
-    }
-}
-
-function displayFFCalendar(data) {
-    const container = document.getElementById('ff-calendar-data');
-    
-    if (!data || data.length === 0) {
-        container.innerHTML = '<p style="opacity: 0.7;">No calendar events found for the selected month.</p>';
-        return;
-    }
-    
-    container.innerHTML = data.map(event => `
-        <div class="calendar-item">
-            <div class="calendar-time">${event.time || event.date || 'N/A'}</div>
-            <div class="calendar-title">${event.event}</div>
-            <div class="calendar-impact ${event.impact?.toLowerCase() || 'low'}">${event.impact || 'Low'}</div>
-            <div class="calendar-currency">${event.currency}</div>
-            ${event.actual || event.forecast ? `
-                <div class="calendar-data">
-                    <span>Actual: ${event.actual || 'N/A'}</span>
-                    <span>Forecast: ${event.forecast || 'N/A'}</span>
-                    <span>Previous: ${event.previous || 'N/A'}</span>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
 }
 
 // ============================================================================
-// COMPREHENSIVE ANALYSIS FUNCTIONS
+// ACCOUNT DATA FUNCTIONS
 // ============================================================================
 
-async function loadComprehensiveAnalysis() {
-    const pair = document.getElementById('analysis-pair-selector').value;
-    
+async function loadAccountData() {
     try {
-        const response = await fetch(`/api/analysis/${pair}`);
+        const response = await fetch('/api/account');
         const data = await response.json();
         
-        if (data.error) {
-            throw new Error(data.error);
+        if (data.success && data.account) {
+            updateAccountSummary(data.account);
         }
         
-        displayTechnicalAnalysis(data.technical);
-        displayPriceAction(data.price_action);
-        displayTradingRecommendation(data.recommendation, data);
-        
+        // Load positions and trades
+        await Promise.all([
+            loadPositions(),
+            loadOpenTrades()
+        ]);
     } catch (error) {
-        console.error('Error loading comprehensive analysis:', error);
-        showNotification('Failed to load comprehensive analysis', 'error');
+        console.error('Error loading account data:', error);
     }
 }
 
-function displayTechnicalAnalysis(technical) {
-    const container = document.getElementById('technical-analysis');
+function updateAccountSummary(account) {
+    document.getElementById('account-balance').textContent = `$${parseFloat(account.balance).toFixed(2)}`;
+    document.getElementById('account-equity').textContent = `$${parseFloat(account.NAV).toFixed(2)}`;
+    document.getElementById('account-pnl').textContent = `$${parseFloat(account.pl).toFixed(2)}`;
+    document.getElementById('account-margin').textContent = `$${parseFloat(account.marginUsed).toFixed(2)}`;
+    document.getElementById('open-positions').textContent = account.openPositionCount;
+    document.getElementById('open-trades').textContent = account.openTradeCount;
     
-    container.innerHTML = `
-        <div class="analysis-item">
-            <div class="analysis-label">Trend:</div>
-            <div class="analysis-value ${technical.trend}">${technical.trend.toUpperCase()}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">RSI:</div>
-            <div class="analysis-value ${technical.rsi_signal}">${technical.rsi} (${technical.rsi_signal})</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">MACD Signal:</div>
-            <div class="analysis-value ${technical.macd_signal}">${technical.macd_signal.toUpperCase()}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Support:</div>
-            <div class="analysis-value">${technical.support}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Resistance:</div>
-            <div class="analysis-value">${technical.resistance}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Volatility (ATR):</div>
-            <div class="analysis-value">${technical.volatility}</div>
-        </div>
-    `;
+    // Color coding for P&L
+    const pnlElement = document.getElementById('account-pnl');
+    const pnl = parseFloat(account.pl);
+    if (pnl > 0) {
+        pnlElement.className = 'account-value text-success';
+    } else if (pnl < 0) {
+        pnlElement.className = 'account-value text-danger';
+    } else {
+        pnlElement.className = 'account-value';
+    }
 }
 
-function displayPriceAction(priceAction) {
-    const container = document.getElementById('price-action-analysis');
-    
-    container.innerHTML = `
-        <div class="analysis-item">
-            <div class="analysis-label">Price Change:</div>
-            <div class="analysis-value ${priceAction.direction}">${priceAction.change_percent >= 0 ? '+' : ''}${priceAction.change_percent}%</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Direction:</div>
-            <div class="analysis-value ${priceAction.direction}">${priceAction.direction.toUpperCase()}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Body Size:</div>
-            <div class="analysis-value">${priceAction.body_size.toFixed(5)}</div>
-        </div>
-        <div class="analysis-item">
-            <div class="analysis-label">Wick Size:</div>
-            <div class="analysis-value">${priceAction.wick_size.toFixed(5)}</div>
-        </div>
-    `;
+async function loadPositions() {
+    try {
+        const response = await fetch('/api/positions');
+        const data = await response.json();
+        
+        const positionsContainer = document.getElementById('positions-list');
+        if (data.success && data.positions && data.positions.length > 0) {
+            positionsContainer.innerHTML = data.positions.map(position => `
+                <div class="position-item">
+                    <div class="position-header">
+                        <strong>${position.instrument}</strong>
+                        <span class="position-side ${position.long.units > 0 ? 'long' : 'short'}">
+                            ${position.long.units > 0 ? 'LONG' : 'SHORT'}
+                        </span>
+                    </div>
+                    <div class="position-details">
+                        <span>Units: ${Math.abs(position.long.units || position.short.units)}</span>
+                        <span>P&L: $${parseFloat(position.unrealizedPL).toFixed(2)}</span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            positionsContainer.innerHTML = '<p style="opacity: 0.7;">No open positions</p>';
+        }
+    } catch (error) {
+        console.error('Error loading positions:', error);
+    }
 }
 
-function displayTradingRecommendation(recommendation, data) {
-    const container = document.getElementById('trading-recommendation');
-    
-    const recommendationClass = recommendation === 'BUY' ? 'buy' : recommendation === 'SELL' ? 'sell' : 'hold';
-    
-    container.innerHTML = `
-        <div class="recommendation-main">
-            <div class="recommendation-signal ${recommendationClass}">${recommendation}</div>
-            <div class="recommendation-confidence">High Confidence</div>
-        </div>
-        <div class="recommendation-details">
-            <div class="analysis-item">
-                <div class="analysis-label">Patterns Detected:</div>
-                <div class="analysis-value">${data.patterns.length > 0 ? data.patterns.join(', ') : 'None'}</div>
-            </div>
-            <div class="analysis-item">
-                <div class="analysis-label">Analysis Time:</div>
-                <div class="analysis-value">${new Date(data.timestamp).toLocaleString()}</div>
-            </div>
-        </div>
-    `;
+async function loadOpenTrades() {
+    try {
+        const response = await fetch('/api/trade/open');
+        const data = await response.json();
+        
+        const tradesContainer = document.getElementById('trades-list');
+        if (data.success && data.trades && data.trades.length > 0) {
+            tradesContainer.innerHTML = data.trades.map(trade => `
+                <div class="trade-item">
+                    <div class="trade-header">
+                        <strong>${trade.instrument}</strong>
+                        <span class="trade-side ${trade.currentUnits > 0 ? 'long' : 'short'}">
+                            ${trade.currentUnits > 0 ? 'LONG' : 'SHORT'}
+                        </span>
+                    </div>
+                    <div class="trade-details">
+                        <span>Units: ${Math.abs(trade.currentUnits)}</span>
+                        <span>P&L: $${parseFloat(trade.unrealizedPL).toFixed(2)}</span>
+                        <button class="btn btn-stop" onclick="closeTrade('${trade.id}')">Close</button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            tradesContainer.innerHTML = '<p style="opacity: 0.7;">No open trades</p>';
+        }
+    } catch (error) {
+        console.error('Error loading trades:', error);
+    }
 }
 
 // ============================================================================
 // TRADE EXECUTION FUNCTIONS
 // ============================================================================
 
-function loadTradeData() {
-    populateTradePairSelector();
-    loadOpenTrades();
-    loadPositions();
+function initializeTradeForm() {
+    const form = document.getElementById('place-trade-form');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await placeTrade();
+    });
 }
 
-function populateTradePairSelector() {
-    const selector = document.getElementById('trade-pair');
-    if (selector.children.length <= 1) {
-        const pairs = [
-            "EUR_USD", "GBP_USD", "USD_JPY", "USD_CHF", "AUD_USD",
-            "USD_CAD", "NZD_USD", "EUR_GBP", "EUR_JPY", "GBP_JPY"
-        ];
-        
-        pairs.forEach(pair => {
-            const option = document.createElement('option');
-            option.value = pair;
-            option.textContent = pair.replace('_', '/');
-            selector.appendChild(option);
-        });
-    }
-}
-
-// Trade form submission
-document.getElementById('place-trade-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+async function placeTrade() {
+    const pair = document.getElementById('trade-pair').value;
+    const direction = document.getElementById('trade-direction').value;
+    const units = parseFloat(document.getElementById('trade-units').value);
+    const stopLoss = document.getElementById('trade-stop-loss').value;
+    const takeProfit = document.getElementById('trade-take-profit').value;
     
-    const formData = {
-        pair: document.getElementById('trade-pair').value,
-        direction: document.getElementById('trade-direction').value,
-        units: parseInt(document.getElementById('trade-units').value),
-        stop_loss: document.getElementById('trade-stop-loss').value || null,
-        take_profit: document.getElementById('trade-take-profit').value || null
-    };
+    if (!pair || !direction || !units) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
     
     try {
         const response = await fetch('/api/trade/place', {
@@ -754,7 +687,13 @@ document.getElementById('place-trade-form').addEventListener('submit', async fun
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+                pair: pair,
+                direction: direction,
+                units: units,
+                stop_loss: stopLoss || null,
+                take_profit: takeProfit || null
+            })
         });
         
         const result = await response.json();
@@ -762,91 +701,12 @@ document.getElementById('place-trade-form').addEventListener('submit', async fun
         if (result.success) {
             showNotification('Trade placed successfully!', 'success');
             document.getElementById('place-trade-form').reset();
-            loadOpenTrades();
             loadAccountData();
         } else {
             showNotification('Failed to place trade: ' + result.error, 'error');
         }
     } catch (error) {
-        console.error('Error placing trade:', error);
-        showNotification('Failed to place trade', 'error');
-    }
-});
-
-async function loadOpenTrades() {
-    try {
-        const response = await fetch('/api/trade/open');
-        const result = await response.json();
-        
-        const container = document.getElementById('open-trades-list');
-        
-        if (!result.success) {
-            container.innerHTML = '<p style="opacity: 0.7;">Failed to load open trades.</p>';
-            return;
-        }
-        
-        if (!result.trades || result.trades.length === 0) {
-            container.innerHTML = '<p style="opacity: 0.7;">No open trades found.</p>';
-            return;
-        }
-        
-        container.innerHTML = result.trades.map(trade => `
-            <div class="trade-item">
-                <div class="trade-info">
-                    <div class="trade-pair">${trade.instrument}</div>
-                    <div class="trade-direction ${trade.currentUnits > 0 ? 'buy' : 'sell'}">
-                        ${trade.currentUnits > 0 ? 'BUY' : 'SELL'} ${Math.abs(trade.currentUnits)} units
-                    </div>
-                    <div class="trade-price">Entry: ${trade.price}</div>
-                    <div class="trade-unrealized-pl ${trade.unrealizedPL >= 0 ? 'positive' : 'negative'}">
-                        P&L: ${trade.unrealizedPL}
-                    </div>
-                </div>
-                <button class="close-trade-btn" onclick="closeTrade('${trade.id}')">Close</button>
-            </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error loading open trades:', error);
-        document.getElementById('open-trades-list').innerHTML = '<p style="opacity: 0.7;">Failed to load open trades.</p>';
-    }
-}
-
-async function loadPositions() {
-    try {
-        const response = await fetch('/api/positions');
-        const result = await response.json();
-        
-        const container = document.getElementById('positions-list');
-        
-        if (!result.success) {
-            container.innerHTML = '<p style="opacity: 0.7;">Failed to load positions.</p>';
-            return;
-        }
-        
-        if (!result.positions || result.positions.length === 0) {
-            container.innerHTML = '<p style="opacity: 0.7;">No positions found.</p>';
-            return;
-        }
-        
-        container.innerHTML = result.positions.map(position => `
-            <div class="trade-item">
-                <div class="trade-info">
-                    <div class="trade-pair">${position.instrument}</div>
-                    <div class="trade-direction ${position.long.units > 0 ? 'buy' : 'sell'}">
-                        ${position.long.units > 0 ? 'LONG' : 'SHORT'} ${Math.abs(position.long.units || position.short.units)} units
-                    </div>
-                    <div class="trade-price">Avg Price: ${position.long.averagePrice || position.short.averagePrice}</div>
-                    <div class="trade-unrealized-pl ${position.unrealizedPL >= 0 ? 'positive' : 'negative'}">
-                        P&L: ${position.unrealizedPL}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error loading positions:', error);
-        document.getElementById('positions-list').innerHTML = '<p style="opacity: 0.7;">Failed to load positions.</p>';
+        showNotification('Error placing trade: ' + error.message, 'error');
     }
 }
 
@@ -860,67 +720,51 @@ async function closeTrade(tradeId) {
         
         if (result.success) {
             showNotification('Trade closed successfully!', 'success');
-            loadOpenTrades();
             loadAccountData();
         } else {
             showNotification('Failed to close trade: ' + result.error, 'error');
         }
     } catch (error) {
-        console.error('Error closing trade:', error);
-        showNotification('Failed to close trade', 'error');
+        showNotification('Error closing trade: ' + error.message, 'error');
     }
 }
 
-// ============================================================================
-// TRADE ALERTS FUNCTIONS
-// ============================================================================
+async function loadTradeData() {
+    await Promise.all([
+        loadTradeAlerts()
+    ]);
+}
 
 async function loadTradeAlerts() {
     try {
         const response = await fetch('/api/alerts');
-        const result = await response.json();
+        const data = await response.json();
         
-        const container = document.getElementById('trade-alerts-list');
-        
-        if (!result.success) {
-            container.innerHTML = '<p style="opacity: 0.7;">Failed to load trade alerts.</p>';
-            return;
+        const alertsContainer = document.getElementById('trade-alerts');
+        if (data.success && data.alerts && data.alerts.length > 0) {
+            alertsContainer.innerHTML = data.alerts.map(alert => `
+                <div class="alert-item">
+                    <div class="alert-header">
+                        <strong>${alert.pair}</strong>
+                        <span class="alert-signal ${alert.signal.toLowerCase()}">${alert.signal.toUpperCase()}</span>
+                    </div>
+                    <div class="alert-details">
+                        <span>Confidence: ${alert.confidence}%</span>
+                        <span>Price: ${alert.price}</span>
+                    </div>
+                    <div class="alert-reasoning">${alert.reasoning}</div>
+                    <button class="btn" onclick="executeAlert('${alert.id}')">Execute</button>
+                </div>
+            `).join('');
+        } else {
+            alertsContainer.innerHTML = '<p style="opacity: 0.7;">No trade alerts available</p>';
         }
-        
-        if (!result.alerts || result.alerts.length === 0) {
-            container.innerHTML = '<p style="opacity: 0.7;">No trade alerts available. Start the comprehensive strategy to generate alerts.</p>';
-            return;
-        }
-        
-        container.innerHTML = result.alerts.map(alert => `
-            <div class="alert-item">
-                <div class="alert-header">
-                    <div class="alert-pair">${alert.pair}</div>
-                    <div class="alert-signal ${alert.signal.toLowerCase()}">${alert.signal}</div>
-                </div>
-                <div class="alert-details">
-                    <div>Units: ${alert.units}</div>
-                    <div>Stop Loss: ${alert.stop_loss || 'None'}</div>
-                    <div>Take Profit: ${alert.take_profit || 'None'}</div>
-                    <div>Confidence: ${(alert.confidence * 100).toFixed(1)}%</div>
-                </div>
-                <div class="alert-reasoning">${alert.reasoning}</div>
-                <div class="alert-actions">
-                    <button class="execute-alert-btn" onclick="executeTradeAlert('${alert.id}')" ${alert.status === 'executed' ? 'disabled' : ''}>
-                        ${alert.status === 'executed' ? 'Executed' : 'Execute Trade'}
-                    </button>
-                    <span class="alert-status ${alert.status}">${alert.status}</span>
-                </div>
-            </div>
-        `).join('');
-        
     } catch (error) {
         console.error('Error loading trade alerts:', error);
-        document.getElementById('trade-alerts-list').innerHTML = '<p style="opacity: 0.7;">Failed to load trade alerts.</p>';
     }
 }
 
-async function executeTradeAlert(alertId) {
+async function executeAlert(alertId) {
     try {
         const response = await fetch(`/api/alerts/${alertId}/execute`, {
             method: 'POST'
@@ -929,116 +773,149 @@ async function executeTradeAlert(alertId) {
         const result = await response.json();
         
         if (result.success) {
-            showNotification('Trade alert executed successfully!', 'success');
+            showNotification('Alert executed successfully!', 'success');
             loadTradeAlerts();
             loadAccountData();
         } else {
-            showNotification('Failed to execute trade alert: ' + result.error, 'error');
+            showNotification('Failed to execute alert: ' + result.error, 'error');
         }
     } catch (error) {
-        console.error('Error executing trade alert:', error);
-        showNotification('Failed to execute trade alert', 'error');
+        showNotification('Error executing alert: ' + error.message, 'error');
     }
-}
-
-// ============================================================================
-// ACCOUNT FUNCTIONS
-// ============================================================================
-
-async function loadAccountData() {
-    try {
-        const response = await fetch('/api/account');
-        const result = await response.json();
-        
-        if (!result.success) {
-            throw new Error(result.error);
-        }
-        
-        const account = result.account;
-        
-        // Update account summary
-        document.getElementById('account-id').textContent = account.id || 'N/A';
-        document.getElementById('account-balance').textContent = account.balance || 'N/A';
-        document.getElementById('account-nav').textContent = account.NAV || 'N/A';
-        document.getElementById('account-open-trades').textContent = account.openTradeCount || '0';
-        document.getElementById('account-unrealized-pl').textContent = account.unrealizedPL || '0';
-        document.getElementById('account-margin-closeout').textContent = account.marginCloseoutPercent || 'N/A';
-        document.getElementById('account-last-transaction').textContent = account.lastTransactionID || 'N/A';
-        
-        // Update summary panel
-        updateSummaryData();
-        
-    } catch (error) {
-        console.error('Error loading account data:', error);
-        // Don't show error notification for account data as it might not be critical
-    }
-}
-
-function updateSummaryData() {
-    // Update summary values with mock data for now
-    document.getElementById('total-signals').textContent = Math.floor(Math.random() * 50) + 10;
-    document.getElementById('avg-confidence').textContent = (Math.random() * 30 + 70).toFixed(1) + '%';
-    document.getElementById('high-confidence').textContent = Math.floor(Math.random() * 20) + 5;
-    document.getElementById('active-pairs').textContent = Math.floor(Math.random() * 8) + 2;
-    document.getElementById('open-trades').textContent = Math.floor(Math.random() * 5);
-    document.getElementById('daily-trades').textContent = Math.floor(Math.random() * 15) + 3;
 }
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
+function setDefaultDates() {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Set default dates for any date inputs that might exist
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach((input, index) => {
+        if (index === 0) {
+            input.value = today.toISOString().split('T')[0];
+        } else {
+            input.value = tomorrow.toISOString().split('T')[0];
+        }
+    });
+    
+    // Set default month for month inputs
+    const monthInputs = document.querySelectorAll('input[type="month"]');
+    monthInputs.forEach(input => {
+        input.value = today.toISOString().slice(0, 7);
+    });
+}
+
 function showNotification(message, type = 'info') {
-    const container = document.getElementById('notification-container');
+    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
     
-    container.appendChild(notification);
+    // Add to page
+    document.body.appendChild(notification);
     
     // Show notification
     setTimeout(() => notification.classList.add('show'), 100);
     
-    // Remove notification after 5 seconds
+    // Remove after 5 seconds
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => container.removeChild(notification), 300);
+        setTimeout(() => document.body.removeChild(notification), 300);
     }, 5000);
 }
 
-function showSettings() {
-    document.getElementById('settings-modal').style.display = 'block';
+// Add notification styles
+const notificationStyles = `
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    max-width: 350px;
 }
 
-function closeSettings() {
-    document.getElementById('settings-modal').style.display = 'none';
+.notification.show {
+    transform: translateX(0);
 }
 
-function saveSettings() {
-    const tradingMode = document.getElementById('trading-mode').value;
-    const analysisMode = document.getElementById('analysis-mode').value;
-    const confidenceThreshold = document.getElementById('confidence-threshold').value;
-    const updateInterval = document.getElementById('update-interval').value;
-    
-    // Save settings (implement as needed)
-    localStorage.setItem('tradingMode', tradingMode);
-    localStorage.setItem('analysisMode', analysisMode);
-    localStorage.setItem('confidenceThreshold', confidenceThreshold);
-    localStorage.setItem('updateInterval', updateInterval);
-    
-    showNotification('Settings saved successfully!', 'success');
-    closeSettings();
+.notification.success {
+    background: #38a169;
 }
 
-// Update confidence threshold display
-document.getElementById('confidence-threshold').addEventListener('input', function() {
-    document.getElementById('confidence-value').textContent = (this.value * 100).toFixed(0) + '%';
-});
+.notification.error {
+    background: #e53e3e;
+}
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('settings-modal');
-    if (event.target === modal) {
-        closeSettings();
-    }
-} 
+.notification.info {
+    background: #3182ce;
+}
+
+.analysis-item, .indicator-item, .pattern-item {
+    margin-bottom: 8px;
+    padding: 5px 0;
+}
+
+.position-item, .trade-item, .alert-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.position-header, .trade-header, .alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.position-side, .trade-side, .alert-signal {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.position-side.long, .trade-side.long, .alert-signal.buy {
+    background: rgba(56, 161, 105, 0.2);
+    color: #38a169;
+}
+
+.position-side.short, .trade-side.short, .alert-signal.sell {
+    background: rgba(229, 62, 62, 0.2);
+    color: #e53e3e;
+}
+
+.position-details, .trade-details, .alert-details {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #a0aec0;
+}
+
+.alert-reasoning {
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+`;
+
+// Add styles to head
+const styleSheet = document.createElement('style');
+styleSheet.textContent = notificationStyles;
+document.head.appendChild(styleSheet); 

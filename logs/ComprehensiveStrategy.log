@@ -1,20 +1,3 @@
-2025-07-28 17:45:52 LogWrapper init() ./logs/ComprehensiveStrategy.log
-2025-07-28 17:45:52 Comprehensive Trading Strategy initialized in moderate mode
-2025-07-28 17:45:52 Comprehensive trading strategy started
-2025-07-28 17:46:26 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:46:27 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:46:58 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:46:59 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:47:30 ⏸️  OpenAI analysis skipped for EUR_USD - conditions not favorable
-2025-07-28 17:47:30 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:48:01 ⏸️  OpenAI analysis skipped for EUR_USD - conditions not favorable
-2025-07-28 17:48:02 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:48:34 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:49:05 ⏸️  OpenAI analysis skipped for GBP_USD - conditions not favorable
-2025-07-28 17:49:06 ⏸️  OpenAI analysis skipped for USD_JPY - conditions not favorable
-2025-07-28 17:49:06 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:49:38 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:50:09 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:52:14 ⏸️  OpenAI analysis skipped for EUR_USD - conditions not favorable
-2025-07-28 17:52:15 ⏸️  OpenAI analysis skipped for USD_CAD - conditions not favorable
-2025-07-28 17:53:19 ⏸️  OpenAI analysis skipped for AUD_USD - conditions not favorable
+2025-07-28 21:14:05 LogWrapper init() ./logs/ComprehensiveStrategy.log
+2025-07-28 21:14:05 Comprehensive Trading Strategy initialized in moderate mode
+2025-07-28 21:14:05 Comprehensive trading strategy started
