@@ -528,7 +528,15 @@ def get_comprehensive_analysis(pair):
         if candles.empty:
             return jsonify({'error': 'No data available'})
         
-        latest = candles.iloc[-1]
+        # Calculate technical indicators
+        from technicals.indicators import TechnicalIndicators
+        ti = TechnicalIndicators()
+        candles_with_indicators = ti.calculate_all_indicators(candles)
+        
+        if candles_with_indicators.empty:
+            return jsonify({'error': 'Failed to calculate technical indicators'})
+        
+        latest = candles_with_indicators.iloc[-1]
         
         # Calculate technical indicators
         technical = {
@@ -542,7 +550,7 @@ def get_comprehensive_analysis(pair):
         }
         
         # Calculate price action using correct column names
-        price_change = ((latest['mid_c'] - candles.iloc[-2]['mid_c']) / candles.iloc[-2]['mid_c']) * 100
+        price_change = ((latest['mid_c'] - candles_with_indicators.iloc[-2]['mid_c']) / candles_with_indicators.iloc[-2]['mid_c']) * 100
         price_action = {
             'direction': 'up' if price_change > 0 else 'down',
             'change_percent': round(abs(price_change), 2),
@@ -556,7 +564,7 @@ def get_comprehensive_analysis(pair):
         elif latest.get('RSI_14', 0) > 70:
             patterns.append('overbought')
         
-        if latest.get('HIST', 0) > 0 and candles.iloc[-2].get('HIST', 0) <= 0:
+        if latest.get('HIST', 0) > 0 and candles_with_indicators.iloc[-2].get('HIST', 0) <= 0:
             patterns.append('macd_crossover')
         
         # Generate recommendation based on horizon
@@ -582,6 +590,8 @@ def get_comprehensive_analysis(pair):
             'pattern_reliability': 'medium'
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)})
 
 def generate_recommendation(technical, price_action, patterns, horizon):
