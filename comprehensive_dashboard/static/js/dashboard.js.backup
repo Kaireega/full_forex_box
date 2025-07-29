@@ -9,9 +9,6 @@ let chartStreamingInterval = null;
 let aiAnalysisInterval = null;
 let realTimeUpdatesActive = false;
 
-// Global chart variable
-let currentChart = null;
-
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeDashboard();
@@ -657,208 +654,230 @@ async function loadChartData() {
     console.log(`Loading chart data for ${pair} ${timeframe}`);
     
     try {
-        // Use historical data from OANDA API (working solution)
-        console.log('Loading historical data from OANDA API...');
-        const response = await fetch(`/api/live-candles/${pair}/${timeframe}`);
+        // Use the hybrid streaming endpoint (tries streaming first, falls back to historical)
+        console.log('Loading hybrid streaming data...');
+        const response = await fetch(`/api/streaming-candles/${pair}/${timeframe}`);
         const data = await response.json();
         
         if (data && data.candles && data.candles.length > 0) {
-            console.log(`✅ Historical data loaded: ${data.candles.length} candles`);
-            console.log('Creating chart with candles:', data.candles);
-            createCandlestickChart(data.candles);
+            console.log(`✅ Chart data loaded: ${data.candles.length} candles`);
+            console.log(`Data source: ${data.data_source} (${data.status})`);
+            
+            // Update data source indicator
+            updateDataSourceIndicator(data.data_source, data.status, data.streaming);
+            
+            // Create chart with the data
+            createCandlestickChart(data.candles, pair, timeframe);
+            
+            // Update chart info
             updateChartInfo(data.candles);
+            
         } else {
-            console.error('❌ No candle data received from OANDA API');
+            console.error('❌ No chart data available');
             showNotification('No chart data available', 'error');
         }
+        
     } catch (error) {
         console.error('Error loading chart data:', error);
         showNotification('Failed to load chart data', 'error');
     }
 }
 
-// Create candlestick chart using Plotly
+// Function to update data source indicator
+function updateDataSourceIndicator(dataSource, status, isStreaming) {
+    const indicator = document.getElementById('data-source-indicator');
+    if (!indicator) return;
+    
+    let statusText = '';
+    let statusClass = '';
+    
+    if (isStreaming) {
+        statusText = '🟢 LIVE STREAMING';
+        statusClass = 'status-live';
+    } else if (dataSource === 'oanda_api') {
+        statusText = '🟡 HISTORICAL DATA';
+        statusClass = 'status-historical';
+    } else if (dataSource === 'none') {
+        statusText = '🔴 NO DATA';
+        statusClass = 'status-error';
+    } else {
+        statusText = '⚪ UNKNOWN';
+        statusClass = 'status-unknown';
+    }
+    
+    indicator.textContent = statusText;
+    indicator.className = `data-source-indicator ${statusClass}`;
+    
+    // Update tooltip with detailed info
+    indicator.title = `Source: ${dataSource}\nStatus: ${status}\nStreaming: ${isStreaming}`;
+}
+
 function createCandlestickChart(candles) {
-    console.log('Creating Plotly candlestick chart with', candles.length, 'candles');
+    console.log('Creating chart with candles:', candles);
     
-    // Transform data for Plotly
-    const dates = candles.map(candle => new Date(candle.x));
-    const opens = candles.map(candle => parseFloat(candle.o));
-    const highs = candles.map(candle => parseFloat(candle.h));
-    const lows = candles.map(candle => parseFloat(candle.l));
-    const closes = candles.map(candle => parseFloat(candle.c));
-    
-    const trace = {
-        x: dates,
-        open: opens,
-        high: highs,
-        low: lows,
-        close: closes,
-        type: 'candlestick',
-        name: 'Price',
-        increasing: {line: {color: '#26a69a'}, fillcolor: '#26a69a'},
-        decreasing: {line: {color: '#ef5350'}, fillcolor: '#ef5350'}
-    };
-    
-    const layout = {
-        title: {
-            text: 'Forex Price Chart',
-            font: {size: 18, color: '#2d3748'}
-        },
-        xaxis: {
-            title: 'Time',
-            type: 'date',
-            gridcolor: '#e2e8f0',
-            showgrid: true
-        },
-        yaxis: {
-            title: 'Price',
-            gridcolor: '#e2e8f0',
-            showgrid: true,
-            side: 'right'
-        },
-        plot_bgcolor: '#ffffff',
-        paper_bgcolor: '#ffffff',
-        font: {color: '#2d3748'},
-        margin: {l: 50, r: 50, t: 50, b: 50},
-        showlegend: false,
-        height: 500
-    };
-    
-    const config = {
-        responsive: true,
-        displayModeBar: true,
-        modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
-        displaylogo: false
-    };
-    
-    // Create or update the chart
-    const chartContainer = document.getElementById('price-chart');
-    if (currentChart) {
-        Plotly.react(chartContainer, [trace], layout, config);
-    } else {
-        Plotly.newPlot(chartContainer, [trace], layout, config);
-    }
-    
-    currentChart = chartContainer;
-    console.log('✅ Plotly candlestick chart created successfully');
-    showNotification('Chart updated successfully', 'success');
-}
-
-// Create line chart using Plotly (fallback)
-function createLineChart(candles) {
-    console.log('Creating Plotly line chart with', candles.length, 'candles');
-    
-    // Transform data for Plotly
-    const dates = candles.map(candle => new Date(candle.x));
-    const closes = candles.map(candle => parseFloat(candle.c));
-    
-    const trace = {
-        x: dates,
-        y: closes,
-        type: 'scatter',
-        mode: 'lines',
-        name: 'Close Price',
-        line: {color: '#4299e1', width: 2}
-    };
-    
-    const layout = {
-        title: {
-            text: 'Forex Price Chart (Line)',
-            font: {size: 18, color: '#2d3748'}
-        },
-        xaxis: {
-            title: 'Time',
-            type: 'date',
-            gridcolor: '#e2e8f0',
-            showgrid: true
-        },
-        yaxis: {
-            title: 'Price',
-            gridcolor: '#e2e8f0',
-            showgrid: true,
-            side: 'right'
-        },
-        plot_bgcolor: '#ffffff',
-        paper_bgcolor: '#ffffff',
-        font: {color: '#2d3748'},
-        margin: {l: 50, r: 50, t: 50, b: 50},
-        showlegend: false,
-        height: 500
-    };
-    
-    const config = {
-        responsive: true,
-        displayModeBar: true,
-        modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
-        displaylogo: false
-    };
-    
-    // Create or update the chart
-    const chartContainer = document.getElementById('price-chart');
-    if (currentChart) {
-        Plotly.react(chartContainer, [trace], layout, config);
-    } else {
-        Plotly.newPlot(chartContainer, [trace], layout, config);
-    }
-    
-    currentChart = chartContainer;
-    console.log('✅ Plotly line chart created successfully');
-    showNotification('Line chart created successfully', 'success');
-}
-
-// Update chart info display
-function updateChartInfo(candles) {
-    if (!candles || candles.length === 0) {
-        console.warn('No candles data for chart info update');
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) {
+        console.error('Canvas element not found!');
         return;
     }
     
-    const latest = candles[candles.length - 1];
-    const previous = candles.length > 1 ? candles[candles.length - 2] : latest;
-    
-    // Calculate change
-    const currentPrice = parseFloat(latest.c);
-    const previousPrice = parseFloat(previous.c);
-    const change = currentPrice - previousPrice;
-    const changePercent = (change / previousPrice) * 100;
-    
-    // Update chart info display
-    const chartInfo = document.getElementById('chart-info');
-    if (chartInfo) {
-        chartInfo.innerHTML = `
-            <div class="chart-info-grid">
-                <div class="info-item">
-                    <span class="info-label">Open:</span>
-                    <span class="info-value">${parseFloat(latest.o).toFixed(5)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">High:</span>
-                    <span class="info-value">${parseFloat(latest.h).toFixed(5)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Low:</span>
-                    <span class="info-value">${parseFloat(latest.l).toFixed(5)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Close:</span>
-                    <span class="info-value">${currentPrice.toFixed(5)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Change:</span>
-                    <span class="info-value ${change >= 0 ? 'positive' : 'negative'}">
-                        ${change >= 0 ? '+' : ''}${change.toFixed(5)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)
-                    </span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Candles:</span>
-                    <span class="info-value">${candles.length}</span>
-                </div>
-            </div>
-        `;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get canvas context!');
+        return;
     }
     
-    console.log('✅ Chart info updated');
+    // Destroy existing chart
+    if (window.priceChart) {
+        window.priceChart.destroy();
+    }
+    
+    // Transform data for Chart.js
+    const chartData = candles.map(candle => ({
+        x: new Date(candle.x),
+        o: parseFloat(candle.o),
+        h: parseFloat(candle.h),
+        l: parseFloat(candle.l),
+        c: parseFloat(candle.c)
+    }));
+    
+    console.log('Transformed chart data:', chartData);
+    
+    try {
+        // Try candlestick chart first
+        if (typeof Chart !== 'undefined' && Chart.controllers && Chart.controllers.Candlestick) {
+            console.log('Creating candlestick chart...');
+            window.priceChart = new Chart(ctx, {
+                type: 'candlestick',
+                data: {
+                    datasets: [{
+                        label: 'Price',
+                        data: chartData,
+                        borderColor: '#1f77b4',
+                        backgroundColor: function(context) {
+                            const point = context.raw;
+                            return point.c >= point.o ? '#4CAF50' : '#f44336';
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'hour' }
+                        },
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+            console.log('✅ Candlestick chart created successfully');
+        } else {
+            throw new Error('Candlestick chart type not available');
+        }
+    } catch (error) {
+        console.log('Candlestick chart failed, using line chart:', error);
+        
+        // Fallback to line chart
+        window.priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Close Price',
+                    data: chartData.map(d => ({ x: d.x, y: d.c })),
+                    borderColor: '#1f77b4',
+                    backgroundColor: 'rgba(31, 119, 180, 0.1)',
+                    tension: 0.1,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Price: ${context.parsed.y.toFixed(5)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { 
+                            unit: 'hour',
+                            displayFormats: {
+                                hour: 'HH:mm'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(5);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Line chart fallback created successfully');
+    }
+}
+
+function updateChartInfo(candles) {
+    if (!candles || candles.length === 0) return;
+    
+    const latest = candles[candles.length - 1];
+    const previous = candles[candles.length - 2];
+    
+    // Handle both old format (mid.c) and new format (c)
+    const currentPrice = parseFloat(latest.c || latest.mid?.c || 0);
+    const previousPrice = parseFloat(previous.c || previous.mid?.c || 0);
+    const change = currentPrice - previousPrice;
+    const changePercent = previousPrice !== 0 ? (change / previousPrice) * 100 : 0;
+    
+    // Update DOM elements if they exist
+    const currentPriceElement = document.getElementById('current-price');
+    const priceChangeElement = document.getElementById('price-change');
+    const priceHighElement = document.getElementById('price-high');
+    const priceLowElement = document.getElementById('price-low');
+    
+    if (currentPriceElement) currentPriceElement.textContent = currentPrice.toFixed(5);
+    if (priceChangeElement) {
+        priceChangeElement.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(5)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
+        
+        // Color coding for change
+        if (change > 0) {
+            priceChangeElement.className = 'info-value text-success';
+        } else if (change < 0) {
+            priceChangeElement.className = 'info-value text-danger';
+        } else {
+            priceChangeElement.className = 'info-value';
+        }
+    }
+    
+    // Handle both formats for high/low
+    const highPrice = parseFloat(latest.h || latest.mid?.h || 0);
+    const lowPrice = parseFloat(latest.l || latest.mid?.l || 0);
+    
+    if (priceHighElement) priceHighElement.textContent = highPrice.toFixed(5);
+    if (priceLowElement) priceLowElement.textContent = lowPrice.toFixed(5);
 }
 
 // ============================================================================
@@ -1586,47 +1605,23 @@ function setDefaultDates() {
     });
 }
 
-// Simple notification system
 function showNotification(message, type = 'info') {
+    // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
+    notification.className = `notification ${type}`;
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 8px;
-        color: white;
-        font-weight: bold;
-        z-index: 1000;
-        max-width: 300px;
-        word-wrap: break-word;
-    `;
     
-    // Set colors based on type
-    switch(type) {
-        case 'success':
-            notification.style.backgroundColor = '#48bb78';
-            break;
-        case 'error':
-            notification.style.backgroundColor = '#f56565';
-            break;
-        case 'warning':
-            notification.style.backgroundColor = '#ed8936';
-            break;
-        default:
-            notification.style.backgroundColor = '#4299e1';
-    }
-    
+    // Add to page
     document.body.appendChild(notification);
     
-    // Auto-remove after 3 seconds
+    // Show notification
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    // Remove after 5 seconds
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
+        notification.classList.remove('show');
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 5000);
 }
 
 // Add notification styles

@@ -742,32 +742,41 @@ def stop_system():
 def get_live_candles(pair, granularity):
     """Get latest 100 candles for the pair from OANDA API."""
     try:
-        # Get data from OANDA API
-        df = oanda_api.get_candles_df(pair, granularity=granularity, count=100)
-        candles = []
-        if not df.empty:
-            for idx, row in df.iterrows():
-                # Handle timestamp conversion explicitly
-                if hasattr(idx, 'isoformat'):
-                    timestamp = idx.isoformat()
-                elif isinstance(idx, (int, float)):
-                    from datetime import datetime
-                    timestamp = datetime.fromtimestamp(idx).isoformat()
-                else:
-                    timestamp = str(idx)
-                    
-                candles.append({
-                    'x': timestamp,
-                    'o': row['mid_o'],
-                    'h': row['mid_h'],
-                    'l': row['mid_l'],
-                    'c': row['mid_c']
-                })
-        return jsonify({'candles': candles})
+        print(f"Fetching candles for {pair} {granularity}")
+        
+        # Use the web_api_candles method which is known to work
+        result = oanda_api.web_api_candles(pair, granularity, 100)
+        
+        if result and 'candles' in result and result['candles']:
+            candles = result['candles']
+            print(f"Got {len(candles)} candles from OANDA")
+            
+            # Transform to Chart.js format
+            chart_candles = []
+            for candle in candles:
+                try:
+                    chart_candles.append({
+                        'x': candle['time'],
+                        'o': float(candle['mid']['o']),
+                        'h': float(candle['mid']['h']),
+                        'l': float(candle['mid']['l']),
+                        'c': float(candle['mid']['c'])
+                    })
+                except (KeyError, ValueError) as e:
+                    print(f"Error processing candle: {e}")
+                    continue
+            
+            print(f"Transformed {len(chart_candles)} candles for chart")
+            return jsonify({'candles': chart_candles})
+        else:
+            print(f"No candles returned for {pair} {granularity}")
+            return jsonify({'candles': [], 'error': 'No data available'})
+            
     except Exception as e:
         import traceback
+        print(f"Error in get_live_candles: {e}")
         traceback.print_exc()
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e), 'candles': []})
 
 @app.route('/api/ai-analysis/<pair>')
 def ai_analysis(pair):
@@ -1010,6 +1019,124 @@ def get_streaming_candles(pair, granularity):
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug-candles/<pair>/<granularity>')
+def debug_candles(pair, granularity):
+    """Comprehensive debug endpoint to test OANDA API connection."""
+    debug_info = {
+        'pair': pair,
+        'granularity': granularity,
+        'timestamp': datetime.now().isoformat(),
+        'steps': []
+    }
+    
+    try:
+        # Step 1: Test API connection
+        debug_info['steps'].append('Testing API connection...')
+        account_summary = oanda_api.get_account_summary()
+        if account_summary:
+            debug_info['account'] = {
+                'id': account_summary.get('id'),
+                'name': account_summary.get('name'),
+                'currency': account_summary.get('currency')
+            }
+            debug_info['steps'].append('✅ API connection successful')
+        else:
+            debug_info['steps'].append('❌ API connection failed')
+            return jsonify(debug_info)
+        
+        # Step 2: Test raw candle fetch
+        debug_info['steps'].append('Testing raw candle fetch...')
+        raw_candles = oanda_api.fetch_candles(pair, count=5, granularity=granularity)
+        if raw_candles:
+            debug_info['raw_candles_count'] = len(raw_candles)
+            debug_info['raw_candles_sample'] = raw_candles[0] if raw_candles else None
+            debug_info['steps'].append(f'✅ Raw candles fetched: {len(raw_candles)}')
+        else:
+            debug_info['steps'].append('❌ Raw candles fetch failed')
+            return jsonify(debug_info)
+        
+        # Step 3: Test DataFrame conversion
+        debug_info['steps'].append('Testing DataFrame conversion...')
+        df = oanda_api.get_candles_df(pair, granularity=granularity, count=10)
+        if df is not None and not df.empty:
+            debug_info['df_info'] = {
+                'shape': df.shape,
+                'columns': df.columns.tolist(),
+                'first_row': df.iloc[0].to_dict() if len(df) > 0 else None,
+                'last_row': df.iloc[-1].to_dict() if len(df) > 0 else None
+            }
+            debug_info['steps'].append(f'✅ DataFrame created: {df.shape}')
+        else:
+            debug_info['steps'].append('❌ DataFrame conversion failed')
+            return jsonify(debug_info)
+        
+        # Step 4: Test web_api_candles method
+        debug_info['steps'].append('Testing web_api_candles method...')
+        web_result = oanda_api.web_api_candles(pair, granularity, 10)
+        if web_result and 'candles' in web_result:
+            debug_info['web_candles_count'] = len(web_result['candles'])
+            debug_info['web_candles_sample'] = web_result['candles'][0] if web_result['candles'] else None
+            debug_info['steps'].append(f'✅ Web candles: {len(web_result["candles"])}')
+        else:
+            debug_info['steps'].append('❌ Web candles failed')
+        
+        # Step 5: Test final transformation
+        debug_info['steps'].append('Testing final transformation...')
+        if web_result and 'candles' in web_result:
+            chart_candles = []
+            for candle in web_result['candles']:
+                chart_candles.append({
+                    'x': candle['time'],
+                    'o': float(candle['mid']['o']),
+                    'h': float(candle['mid']['h']),
+                    'l': float(candle['mid']['l']),
+                    'c': float(candle['mid']['c'])
+                })
+            debug_info['final_candles_count'] = len(chart_candles)
+            debug_info['final_candles_sample'] = chart_candles[0] if chart_candles else None
+            debug_info['steps'].append(f'✅ Final transformation: {len(chart_candles)} candles')
+        else:
+            debug_info['steps'].append('❌ Final transformation failed')
+        
+        debug_info['success'] = True
+        
+    except Exception as e:
+        import traceback
+        debug_info['error'] = str(e)
+        debug_info['traceback'] = traceback.format_exc()
+        debug_info['steps'].append(f'❌ Exception: {str(e)}')
+        debug_info['success'] = False
+    
+    return jsonify(debug_info)
+
+@app.route('/api/test-candles/<pair>/<granularity>')
+def test_candles(pair, granularity):
+    """Test endpoint with mock data to verify chart functionality."""
+    from datetime import datetime, timedelta
+    
+    # Generate mock candle data
+    base_time = datetime.now() - timedelta(hours=10)
+    mock_candles = []
+    
+    for i in range(20):
+        candle_time = base_time + timedelta(minutes=15 * i)
+        base_price = 1.1000 + (i * 0.0001)  # Slight upward trend
+        
+        mock_candles.append({
+            'x': candle_time.isoformat(),
+            'o': base_price,
+            'h': base_price + 0.0005,
+            'l': base_price - 0.0003,
+            'c': base_price + 0.0002
+        })
+    
+    return jsonify({
+        'candles': mock_candles,
+        'pair': pair,
+        'granularity': granularity,
+        'note': 'This is mock data for testing'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001) 
