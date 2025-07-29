@@ -2802,3 +2802,9 @@
 2025-07-28 23:25:30,870 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:30] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
 2025-07-28 23:25:36,870 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:36] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
 2025-07-28 23:25:42,871 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:42] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
+2025-07-28 23:25:48,870 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:48] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
+2025-07-28 23:25:54,870 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:54] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
+2025-07-28 23:25:56,639 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-28 23:25:56,642 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:25:56] "GET /api/enhanced-ai-analysis/EUR_USD HTTP/1.1" 200 -
+2025-07-28 23:26:00,871 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:26:00] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
+2025-07-28 23:26:06,872 - werkzeug - INFO - 127.0.0.1 - - [28/Jul/2025 23:26:06] "GET /api/streaming-candles/EUR_USD/M15 HTTP/1.1" 200 -
