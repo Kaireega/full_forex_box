@@ -42,14 +42,15 @@
         </div>
         
         <!-- Navigation Tabs -->
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="showTab('trading')">🤖 Trading System</button>
-            <button class="tab-btn" onclick="showTab('charts')">📈 Price Charts</button>
-            <button class="tab-btn" onclick="showTab('technicals')">📊 Technical Analysis</button>
-            <button class="tab-btn" onclick="showTab('calendars')">📅 Economic Calendars</button>
-            <button class="tab-btn" onclick="showTab('analysis')">🔍 Comprehensive Analysis</button>
-            <button class="tab-btn" onclick="showTab('trades')">💰 Trade Execution</button>
-        </div>
+                        <div class="nav-tabs">
+                    <button class="tab-btn active" onclick="showTab('trading')">🤖 Trading System</button>
+                    <button class="tab-btn" onclick="showTab('charts')">📈 Price Charts</button>
+                    <button class="tab-btn" onclick="showTab('technicals')">📊 Technical Analysis</button>
+                    <button class="tab-btn" onclick="showTab('calendars')">📅 Economic Calendars</button>
+                    <button class="tab-btn" onclick="showTab('analysis')">🔍 Comprehensive Analysis</button>
+                    <button class="tab-btn" onclick="showTab('alerts')">🚨 Trade Alerts</button>
+                    <button class="tab-btn" onclick="showTab('trades')">💰 Trade Execution</button>
+                </div>
         
         <!-- Trading System Tab -->
         <div id="trading-tab" class="tab-content active">
@@ -288,6 +289,21 @@
                     <div id="risk-analysis">
                         <p style="opacity: 0.7;">Risk analysis will appear here.</p>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trade Alerts Tab -->
+        <div id="alerts-tab" class="tab-content">
+            <div class="alerts-container">
+                <div class="alerts-header">
+                    <h3>🚨 AI-Powered Trade Alerts</h3>
+                    <p>Alerts generated when technical and fundamental conditions align, confirmed by OpenAI analysis</p>
+                    <button class="btn" onclick="loadTradeAlerts()">Refresh Alerts</button>
+                </div>
+                
+                <div class="alerts-list" id="trade-alerts-list">
+                    <p style="opacity: 0.7;">Click "Refresh Alerts" to load current trade alerts.</p>
                 </div>
             </div>
         </div>

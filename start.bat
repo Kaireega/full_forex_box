@@ -80,7 +80,7 @@ if not exist "server.py" (
     echo [ERROR] server.py not found
     exit /b 1
 )
-echo [INFO] Web server starting on http://localhost:5000
+echo [INFO] Web server starting on http://localhost:5001
 python server.py
 goto :end
 
@@ -158,12 +158,12 @@ echo.
 echo 📊 System Status Check
 echo.
 
-REM Check if port 5000 is in use (web server)
-netstat -an | find ":5000" >nul
+REM Check if port 5001 is in use (web server)
+netstat -an | find ":5001" >nul
 if errorlevel 1 (
     echo [WARNING] Web Server: Not running ❌
 ) else (
-    echo [INFO] Web Server: Running on http://localhost:5000 ✅
+    echo [INFO] Web Server: Running on http://localhost:5001 ✅
 )
 
 REM Check environment variables

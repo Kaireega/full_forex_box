@@ -977,4 +977,95 @@ window.onclick = function(event) {
     if (event.target === modal) {
         closeSettings();
     }
+}
+
+// ============================================================================
+// TRADE ALERTS
+// ============================================================================
+
+async function loadTradeAlerts() {
+    try {
+        const response = await fetch('/api/alerts');
+        const data = await response.json();
+        
+        const alertsContainer = document.getElementById('trade-alerts-list');
+        
+        if (data.alerts && data.alerts.length > 0) {
+            alertsContainer.innerHTML = data.alerts.map(alert => `
+                <div class="alert-item ${alert.status}">
+                    <div class="alert-header">
+                        <div class="alert-pair">${alert.pair}</div>
+                        <div class="alert-signal ${alert.signal_type.toLowerCase()}">${alert.signal_type}</div>
+                    </div>
+                    
+                    <div class="alert-details">
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Entry Price</div>
+                            <div class="alert-detail-value">${alert.entry_price}</div>
+                        </div>
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Stop Loss</div>
+                            <div class="alert-detail-value">${alert.stop_loss}</div>
+                        </div>
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Take Profit</div>
+                            <div class="alert-detail-value">${alert.take_profit}</div>
+                        </div>
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Position Size</div>
+                            <div class="alert-detail-value">${alert.position_size}</div>
+                        </div>
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Confidence</div>
+                            <div class="alert-detail-value">${(alert.confidence * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="alert-detail">
+                            <div class="alert-detail-label">Risk/Reward</div>
+                            <div class="alert-detail-value">${alert.risk_reward_ratio.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert-reasoning">
+                        <strong>AI Analysis:</strong> ${alert.reasoning}
+                    </div>
+                    
+                    <div class="alert-actions">
+                        <span class="alert-status ${alert.status}">${alert.status.toUpperCase()}</span>
+                        ${alert.status === 'pending' ? 
+                            `<button class="execute-alert-btn" onclick="executeTradeAlert('${alert.id}')">Execute Trade</button>` : 
+                            ''
+                        }
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            alertsContainer.innerHTML = '<p style="opacity: 0.7; text-align: center;">No trade alerts available. The system will generate alerts when favorable conditions are detected.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading trade alerts:', error);
+        showNotification('Error loading trade alerts: ' + error.message, 'error');
+    }
+}
+
+async function executeTradeAlert(alertId) {
+    try {
+        const response = await fetch(`/api/alerts/${alertId}/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            loadTradeAlerts(); // Refresh the alerts
+        } else {
+            showNotification('Failed to execute trade alert: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error executing trade alert:', error);
+        showNotification('Error executing trade alert: ' + error.message, 'error');
+    }
 } 

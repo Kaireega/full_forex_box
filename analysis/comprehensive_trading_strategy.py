@@ -64,16 +64,12 @@ class TimeFrame(Enum):
     H4 = "H4"
     D1 = "D1"
 
-@dataclass
-class MarketCondition:
-    """Market condition analysis."""
-    trend: str  # "bullish", "bearish", "sideways"
-    volatility: float  # 0-1 scale
-    momentum: float  # -1 to 1 scale
-    strength: float  # 0-1 scale
-    support_levels: List[float]
-    resistance_levels: List[float]
-    key_levels: List[float]
+class MarketCondition(Enum):
+    """Market condition types."""
+    TRENDING = "trending"
+    VOLATILE = "volatile"
+    SIDEWAYS = "sideways"
+    RANGING = "ranging"
 
 @dataclass
 class SignalStrength:
@@ -165,7 +161,7 @@ class ComprehensiveTradingStrategy:
         # Initialize strategy parameters based on mode
         self._initialize_strategy_parameters()
         
-        self.logger.info(f"Comprehensive Trading Strategy initialized in {mode.value} mode")
+        self.logger.logger.info(f"Comprehensive Trading Strategy initialized in {mode.value} mode")
     
     def _initialize_strategy_parameters(self):
         """Initialize strategy parameters based on mode."""
@@ -196,6 +192,15 @@ class ComprehensiveTradingStrategy:
             self.max_daily_trades = 5
             self.position_sizing_multiplier = 1.0
             self.stop_loss_multiplier = 1.0
+        
+        # OpenAI calling parameters
+        self.min_confidence_threshold = 0.7
+        self.openai_call_cooldown = 300  # 5 minutes between OpenAI calls per pair
+        self.last_openai_calls = {}  # Track last OpenAI call time per pair
+        
+        # Trade alerts
+        self.trade_alerts = []
+        self.max_trade_alerts = 10
     
     def start_strategy(self):
         """Start the comprehensive trading strategy."""
@@ -213,7 +218,7 @@ class ComprehensiveTradingStrategy:
         self.analysis_thread.start()
         self.signal_thread.start()
         
-        self.logger.info("Comprehensive trading strategy started")
+        self.logger.logger.info("Comprehensive trading strategy started")
     
     def stop_strategy(self):
         """Stop the comprehensive trading strategy."""
@@ -229,7 +234,7 @@ class ComprehensiveTradingStrategy:
         if hasattr(self, 'signal_thread'):
             self.signal_thread.join(timeout=5)
         
-        self.logger.info("Comprehensive trading strategy stopped")
+        self.logger.logger.info("Comprehensive trading strategy stopped")
     
     def _analysis_worker(self):
         """Worker thread for continuous market analysis."""
@@ -256,7 +261,7 @@ class ComprehensiveTradingStrategy:
                 time.sleep(30)  # Analysis interval
                 
             except Exception as e:
-                self.logger.error(f"Error in analysis worker: {e}")
+                self.logger.logger.error(f"Error in analysis worker: {e}")
                 time.sleep(60)
     
     def _signal_worker(self):
@@ -281,55 +286,41 @@ class ComprehensiveTradingStrategy:
                 time.sleep(1)
                 
             except Exception as e:
-                self.logger.error(f"Error in signal worker: {e}")
+                self.logger.logger.error(f"Error in signal worker: {e}")
                 time.sleep(5)
     
     def _analyze_market_condition(self, pair: str) -> MarketCondition:
         """Analyze current market condition for a pair."""
         try:
-            # Get price data for multiple timeframes
-            price_data = {}
-            for tf in self.timeframes:
-                candles = self.api.get_candles(pair, tf.value, 100)
-                if candles:
-                    price_data[tf] = self._process_candles(candles)
+            # Get recent candles for analysis
+            candles = self.api.get_candles_df(pair, granularity='H1', count=100)
+            if candles is None or candles.empty:
+                return MarketCondition.SIDEWAYS
             
-            # Technical analysis
-            trend_analysis = self._analyze_trend(price_data)
-            volatility_analysis = self._analyze_volatility(price_data)
-            momentum_analysis = self._analyze_momentum(price_data)
-            strength_analysis = self._analyze_strength(price_data)
+            # Calculate volatility
+            returns = candles['mid_c'].pct_change().dropna()
+            volatility = returns.std()
             
-            # Support and resistance levels
-            support_resistance = self._find_support_resistance(price_data)
+            # Calculate trend strength
+            sma_20 = candles['mid_c'].rolling(20).mean()
+            sma_50 = candles['mid_c'].rolling(50).mean()
+            trend_strength = abs(sma_20.iloc[-1] - sma_50.iloc[-1]) / sma_50.iloc[-1]
             
-            # Determine overall market condition
-            trend = self._determine_trend(trend_analysis)
-            volatility = np.mean(list(volatility_analysis.values()))
-            momentum = np.mean(list(momentum_analysis.values()))
-            strength = np.mean(list(strength_analysis.values()))
-            
-            return MarketCondition(
-                trend=trend,
-                volatility=volatility,
-                momentum=momentum,
-                strength=strength,
-                support_levels=support_resistance['support'],
-                resistance_levels=support_resistance['resistance'],
-                key_levels=support_resistance['key_levels']
-            )
-            
+            # Determine market condition
+            if volatility > 0.02:  # High volatility
+                if trend_strength > 0.01:  # Strong trend
+                    return MarketCondition.TRENDING
+                else:
+                    return MarketCondition.VOLATILE
+            else:  # Low volatility
+                if trend_strength > 0.005:  # Weak trend
+                    return MarketCondition.SIDEWAYS
+                else:
+                    return MarketCondition.RANGING
+                    
         except Exception as e:
-            self.logger.error(f"Error analyzing market condition for {pair}: {e}")
-            return MarketCondition(
-                trend="sideways",
-                volatility=0.5,
-                momentum=0.0,
-                strength=0.5,
-                support_levels=[],
-                resistance_levels=[],
-                key_levels=[]
-            )
+            self.logger.logger.error(f"Error analyzing market condition for {pair}: {e}")
+            return MarketCondition.SIDEWAYS
     
     def _process_candles(self, candles: List[Dict]) -> pd.DataFrame:
         """Process candle data into DataFrame with indicators."""
@@ -558,80 +549,101 @@ class ComprehensiveTradingStrategy:
             return "sideways"
     
     def _generate_comprehensive_signal(self, pair: str, market_condition: MarketCondition) -> Optional[ComprehensiveSignal]:
-        """Generate comprehensive trading signal."""
+        """Generate comprehensive trading signal for a pair."""
         try:
             # Get current price
-            current_price = self.api.get_current_price(pair)
-            if not current_price:
+            candles = self.api.get_candles_df(pair, granularity='M1', count=1)
+            if candles is None or candles.empty:
                 return None
+            current_price = candles['mid_c'].iloc[-1]
             
-            # Technical analysis signals
+            # Step 1: Get technical signals
             technical_signals = self._get_technical_signals(pair)
             
-            # Pattern analysis
+            # Step 2: Get pattern signals
             pattern_signals = self._get_pattern_signals(pair)
             
-            # Fundamental analysis
+            # Step 3: Get fundamental signals
             fundamental_signals = self._get_fundamental_signals(pair)
             
-            # AI analysis
-            ai_signals = self._get_ai_signals(pair, market_condition)
+            # Step 4: Check if conditions warrant OpenAI analysis
+            should_call_openai = self._should_call_openai(
+                technical_signals, pattern_signals, fundamental_signals, market_condition
+            )
             
-            # Combine all signals
+            # Step 5: Only call OpenAI if conditions are favorable
+            if should_call_openai:
+                ai_signals = self._get_ai_signals(pair, market_condition)
+                self.logger.logger.info(f"🤖 OpenAI analysis called for {pair} - conditions favorable")
+            else:
+                ai_signals = {'openai': 'HOLD', 'ai_confidence': 0.5}
+                self.logger.logger.info(f"⏸️  OpenAI analysis skipped for {pair} - conditions not favorable")
+            
+            # Step 6: Combine all signals
             combined_signal = self._combine_signals(
                 technical_signals, pattern_signals, fundamental_signals, ai_signals
             )
             
-            if not combined_signal:
+            if not combined_signal or combined_signal == 'HOLD':
                 return None
             
-            # Calculate signal strength
+            # Step 7: Calculate signal strength
             signal_strength = self._calculate_signal_strength(
                 technical_signals, pattern_signals, fundamental_signals, ai_signals
             )
             
-            # Determine entry, stop loss, and take profit
-            entry_price = current_price
-            stop_loss, take_profit = self._calculate_exit_levels(
-                pair, combined_signal, market_condition, current_price
-            )
+            # Step 8: Check if signal is strong enough to alert
+            if signal_strength.confidence >= self.min_confidence_threshold:
+                # Determine entry, stop loss, and take profit
+                entry_price = current_price
+                stop_loss, take_profit = self._calculate_exit_levels(
+                    pair, combined_signal, market_condition, current_price
+                )
+                
+                # Calculate position size
+                position_size = self._calculate_position_size(
+                    pair, entry_price, stop_loss, signal_strength
+                )
+                
+                # Calculate risk-reward ratio
+                risk_reward_ratio = abs(take_profit - entry_price) / abs(stop_loss - entry_price)
+                
+                # Generate reasoning
+                reasoning = self._generate_reasoning(
+                    technical_signals, pattern_signals, fundamental_signals, ai_signals, market_condition
+                )
+                
+                # Create signal
+                signal = ComprehensiveSignal(
+                    timestamp=datetime.now(),
+                    pair=pair,
+                    signal_type=combined_signal,
+                    entry_price=entry_price,
+                    stop_loss=stop_loss,
+                    take_profit=take_profit,
+                    position_size=position_size,
+                    signal_strength=signal_strength,
+                    market_condition=market_condition,
+                    reasoning=reasoning,
+                    risk_reward_ratio=risk_reward_ratio,
+                    expected_duration=timedelta(hours=4),
+                    source_analysis={
+                        'technical': technical_signals,
+                        'pattern': pattern_signals,
+                        'fundamental': fundamental_signals,
+                        'ai': ai_signals
+                    }
+                )
+                
+                # Add to trade alerts
+                self._add_trade_alert(signal)
+                
+                return signal
             
-            # Calculate position size
-            position_size = self._calculate_position_size(
-                pair, entry_price, stop_loss, signal_strength
-            )
-            
-            # Calculate risk-reward ratio
-            risk_reward_ratio = abs(take_profit - entry_price) / abs(stop_loss - entry_price)
-            
-            # Generate reasoning
-            reasoning = self._generate_reasoning(
-                technical_signals, pattern_signals, fundamental_signals, ai_signals, market_condition
-            )
-            
-            return ComprehensiveSignal(
-                timestamp=datetime.now(),
-                pair=pair,
-                signal_type=combined_signal,
-                entry_price=entry_price,
-                stop_loss=stop_loss,
-                take_profit=take_profit,
-                position_size=position_size,
-                signal_strength=signal_strength,
-                market_condition=market_condition,
-                reasoning=reasoning,
-                risk_reward_ratio=risk_reward_ratio,
-                expected_duration=timedelta(hours=4),
-                source_analysis={
-                    'technical': technical_signals,
-                    'pattern': pattern_signals,
-                    'fundamental': fundamental_signals,
-                    'ai': ai_signals
-                }
-            )
+            return None
             
         except Exception as e:
-            self.logger.error(f"Error generating comprehensive signal for {pair}: {e}")
+            self.logger.logger.error(f"Error generating comprehensive signal for {pair}: {e}")
             return None
     
     def _get_technical_signals(self, pair: str) -> Dict[str, Any]:
@@ -641,15 +653,18 @@ class ComprehensiveTradingStrategy:
         try:
             # Get price data for primary timeframe
             primary_tf = self.timeframes[0]
-            candles = self.api.get_candles(pair, primary_tf.value, 100)
+            candles = self.api.get_candles_df(pair, granularity=primary_tf.value, count=100)
             
-            if not candles:
+            if candles is None or candles.empty:
                 return signals
             
-            df = self._process_candles(candles)
+            # Calculate technical indicators
+            from technicals.indicators import TechnicalIndicators
+            technical_indicators = TechnicalIndicators()
+            df = technical_indicators.calculate_all_indicators(candles)
             
             # RSI signals
-            rsi = df['rsi'].iloc[-1]
+            rsi = df['RSI'].iloc[-1] if 'RSI' in df.columns else 50
             if rsi < 30:
                 signals['rsi'] = 'BUY'
             elif rsi > 70:
@@ -658,63 +673,79 @@ class ComprehensiveTradingStrategy:
                 signals['rsi'] = 'HOLD'
             
             # MACD signals
-            macd = df['macd'].iloc[-1]
-            macd_signal = df['macd_signal'].iloc[-1]
-            if macd > macd_signal:
-                signals['macd'] = 'BUY'
-            else:
-                signals['macd'] = 'SELL'
+            if 'MACD' in df.columns and 'MACD_SIGNAL' in df.columns:
+                macd = df['MACD'].iloc[-1]
+                macd_signal = df['MACD_SIGNAL'].iloc[-1]
+                if macd > macd_signal:
+                    signals['macd'] = 'BUY'
+                elif macd < macd_signal:
+                    signals['macd'] = 'SELL'
+                else:
+                    signals['macd'] = 'HOLD'
             
             # Moving average signals
-            current_price = df['close'].iloc[-1]
-            ema_20 = df['ema_20'].iloc[-1]
-            ema_50 = df['ema_50'].iloc[-1]
-            
-            if current_price > ema_20 > ema_50:
-                signals['ma'] = 'BUY'
-            elif current_price < ema_20 < ema_50:
-                signals['ma'] = 'SELL'
-            else:
-                signals['ma'] = 'HOLD'
+            if 'SMA_20' in df.columns and 'SMA_50' in df.columns:
+                sma_20 = df['SMA_20'].iloc[-1]
+                sma_50 = df['SMA_50'].iloc[-1]
+                current_price = df['mid_c'].iloc[-1]
+                
+                if current_price > sma_20 > sma_50:
+                    signals['ma'] = 'BUY'
+                elif current_price < sma_20 < sma_50:
+                    signals['ma'] = 'SELL'
+                else:
+                    signals['ma'] = 'HOLD'
             
             # Bollinger Bands signals
-            bb_upper = df['bb_upper'].iloc[-1]
-            bb_lower = df['bb_lower'].iloc[-1]
-            
-            if current_price < bb_lower:
-                signals['bb'] = 'BUY'
-            elif current_price > bb_upper:
-                signals['bb'] = 'SELL'
-            else:
-                signals['bb'] = 'HOLD'
-            
+            if 'BB_upper' in df.columns and 'BB_lower' in df.columns:
+                bb_upper = df['BB_upper'].iloc[-1]
+                bb_lower = df['BB_lower'].iloc[-1]
+                current_price = df['mid_c'].iloc[-1]
+                
+                if current_price <= bb_lower:
+                    signals['bb'] = 'BUY'
+                elif current_price >= bb_upper:
+                    signals['bb'] = 'SELL'
+                else:
+                    signals['bb'] = 'HOLD'
+                    
         except Exception as e:
-            self.logger.error(f"Error getting technical signals for {pair}: {e}")
+            self.logger.logger.error(f"Error getting technical signals for {pair}: {e}")
         
         return signals
     
     def _get_pattern_signals(self, pair: str) -> Dict[str, Any]:
-        """Get pattern recognition signals."""
+        """Get candlestick pattern signals."""
         signals = {}
         
         try:
-            # Get price data
-            candles = self.api.get_candles(pair, self.timeframes[0].value, 100)
+            # Get price data for pattern analysis
+            candles = self.api.get_candles_df(pair, granularity=self.timeframes[0].value, count=100)
             
-            if not candles:
+            if candles is None or candles.empty:
                 return signals
             
-            df = self._process_candles(candles)
+            # Calculate basic candle properties
+            candles['body_size'] = abs(candles['mid_c'] - candles['mid_o'])
+            candles['total_range'] = candles['mid_h'] - candles['mid_l']
+            candles['body_perc'] = (candles['body_size'] / candles['total_range']) * 100
+            candles['direction'] = [1 if c >= o else -1 for c, o in zip(candles['mid_c'], candles['mid_o'])]
             
-            # Detect patterns
-            patterns = self.patterns.detect_patterns(df)
+            # Get latest candle
+            latest = candles.iloc[-1]
             
-            for pattern_name, pattern_data in patterns.items():
-                if pattern_data['detected']:
-                    signals[pattern_name] = pattern_data['signal']
-            
+            # Simple pattern detection
+            if latest['body_perc'] < 10:
+                signals['doji'] = 'NEUTRAL'
+            if latest['body_perc'] < 30 and latest['direction'] == 1:
+                signals['hammer'] = 'BUY'
+            if latest['body_perc'] < 30 and latest['direction'] == -1:
+                signals['shooting_star'] = 'SELL'
+            if 10 < latest['body_perc'] < 40:
+                signals['spinning_top'] = 'NEUTRAL'
+                
         except Exception as e:
-            self.logger.error(f"Error getting pattern signals for {pair}: {e}")
+            self.logger.logger.error(f"Error getting pattern signals for {pair}: {e}")
         
         return signals
     
@@ -730,7 +761,7 @@ class ComprehensiveTradingStrategy:
             signals['correlation'] = 'NEUTRAL'
             
         except Exception as e:
-            self.logger.error(f"Error getting fundamental signals for {pair}: {e}")
+            self.logger.logger.error(f"Error getting fundamental signals for {pair}: {e}")
         
         return signals
     
@@ -748,7 +779,7 @@ class ComprehensiveTradingStrategy:
                 signals['ai_confidence'] = 0.5
             
         except Exception as e:
-            self.logger.error(f"Error getting AI signals for {pair}: {e}")
+            self.logger.logger.error(f"Error getting AI signals for {pair}: {e}")
             signals['openai'] = 'HOLD'
             signals['ai_confidence'] = 0.5
         
@@ -844,10 +875,11 @@ class ComprehensiveTradingStrategy:
     def _calculate_exit_levels(self, pair: str, signal: str, market_condition: MarketCondition, current_price: float) -> Tuple[float, float]:
         """Calculate stop loss and take profit levels."""
         # Get ATR for volatility-based stops
-        candles = self.api.get_candles(pair, self.timeframes[0].value, 20)
-        if candles:
-            df = self._process_candles(candles)
-            atr = df['atr'].iloc[-1]
+        candles = self.api.get_candles_df(pair, granularity=self.timeframes[0].value, count=20)
+        if candles is not None and not candles.empty:
+            # Calculate ATR manually
+            candles['tr'] = candles[['mid_h', 'mid_l', 'mid_c']].max(axis=1) - candles[['mid_h', 'mid_l', 'mid_c']].min(axis=1)
+            atr = candles['tr'].rolling(14).mean().iloc[-1]
         else:
             atr = current_price * 0.001  # Default 0.1%
         
@@ -859,10 +891,7 @@ class ComprehensiveTradingStrategy:
             stop_loss = current_price + (atr * self.stop_loss_multiplier)
             take_profit = current_price - (atr * self.stop_loss_multiplier * self.min_risk_reward)
         
-        # Adjust to key levels
-        stop_loss = self._adjust_to_key_level(stop_loss, market_condition.key_levels)
-        take_profit = self._adjust_to_key_level(take_profit, market_condition.key_levels)
-        
+        # Adjust to key levels (simplified since we don't have key_levels in enum)
         return stop_loss, take_profit
     
     def _adjust_to_key_level(self, price: float, key_levels: List[float]) -> float:
@@ -921,7 +950,7 @@ class ComprehensiveTradingStrategy:
                 reasons.append(f"Patterns: {', '.join(pattern_signals)}")
         
         # Market condition reasoning
-        reasons.append(f"Market: {market_condition.trend} trend, {market_condition.volatility:.2f} volatility")
+        reasons.append(f"Market: {market_condition.value} condition")
         
         # AI reasoning
         if ai.get('ai_confidence', 0) > 0.7:
@@ -972,7 +1001,7 @@ class ComprehensiveTradingStrategy:
                     'timestamp': datetime.now()
                 }
                 
-                self.logger.info(f"Executed {signal.signal_type} signal for {signal.pair} at {signal.entry_price}")
+                self.logger.logger.info(f"Executed {signal.signal_type} signal for {signal.pair} at {signal.entry_price}")
                 
                 # Update performance metrics
                 self._update_performance_metrics(signal)
@@ -980,7 +1009,7 @@ class ComprehensiveTradingStrategy:
                 self.logger.warning(f"Failed to execute signal for {signal.pair}")
                 
         except Exception as e:
-            self.logger.error(f"Error executing signal for {signal.pair}: {e}")
+            self.logger.logger.error(f"Error executing signal for {signal.pair}: {e}")
     
     def _update_performance_metrics(self, signal: ComprehensiveSignal):
         """Update performance metrics."""
@@ -1016,7 +1045,7 @@ class ComprehensiveTradingStrategy:
         return self.signals_history[-limit:] if self.signals_history else []
     
     def get_comprehensive_analysis(self, pair: str) -> Dict[str, Any]:
-        """Get comprehensive analysis for a specific pair."""
+        """Get comprehensive analysis for a pair."""
         try:
             market_condition = self.market_conditions.get(pair)
             if not market_condition:
@@ -1026,13 +1055,8 @@ class ComprehensiveTradingStrategy:
             
             return {
                 'market_condition': {
-                    'trend': market_condition.trend,
-                    'volatility': market_condition.volatility,
-                    'momentum': market_condition.momentum,
-                    'strength': market_condition.strength,
-                    'support_levels': market_condition.support_levels,
-                    'resistance_levels': market_condition.resistance_levels,
-                    'key_levels': market_condition.key_levels
+                    'type': market_condition.value,
+                    'description': f"Market is {market_condition.value}"
                 },
                 'signal': {
                     'type': signal.signal_type if signal else 'HOLD',
@@ -1049,8 +1073,193 @@ class ComprehensiveTradingStrategy:
             }
             
         except Exception as e:
-            self.logger.error(f"Error getting comprehensive analysis for {pair}: {e}")
+            self.logger.logger.error(f"Error getting comprehensive analysis for {pair}: {e}")
             return {'error': str(e)}
+    
+    def _should_call_openai(self, technical_signals: Dict, pattern_signals: Dict, 
+                           fundamental_signals: Dict, market_condition: MarketCondition) -> bool:
+        """Determine if OpenAI should be called based on price action and conditions."""
+        try:
+            # Check cooldown period
+            current_time = time.time()
+            pair = list(technical_signals.keys())[0] if technical_signals else "unknown"
+            
+            if pair in self.last_openai_calls:
+                time_since_last_call = current_time - self.last_openai_calls[pair]
+                if time_since_last_call < self.openai_call_cooldown:
+                    return False
+            
+            # Check if technical conditions are favorable
+            technical_score = 0
+            buy_signals = sum(1 for s in technical_signals.values() if s == 'BUY')
+            sell_signals = sum(1 for s in technical_signals.values() if s == 'SELL')
+            total_technical = len(technical_signals)
+            
+            if total_technical > 0:
+                technical_score = max(buy_signals, sell_signals) / total_technical
+            
+            # Check if pattern conditions are favorable
+            pattern_score = 0
+            if pattern_signals:
+                detected_patterns = sum(1 for p in pattern_signals.values() if p != 'HOLD')
+                total_patterns = len(pattern_signals)
+                if total_patterns > 0:
+                    pattern_score = detected_patterns / total_patterns
+            
+            # Check market conditions (simplified for enum)
+            market_score = 0
+            if market_condition in [MarketCondition.TRENDING, MarketCondition.VOLATILE]:
+                market_score += 0.5  # Favorable conditions
+            
+            # Calculate overall score
+            overall_score = (technical_score + pattern_score + market_score) / 3
+            
+            # Only call OpenAI if conditions are favorable
+            should_call = overall_score >= 0.6
+            
+            if should_call:
+                self.last_openai_calls[pair] = current_time
+            
+            return should_call
+            
+        except Exception as e:
+            self.logger.logger.error(f"Error checking if OpenAI should be called: {e}")
+            return False
+    
+    def _add_trade_alert(self, signal: ComprehensiveSignal):
+        """Add a trade alert to the dashboard and shared data store."""
+        try:
+            alert = {
+                'id': f"alert_{int(time.time())}",
+                'timestamp': signal.timestamp.isoformat(),
+                'pair': signal.pair,
+                'signal_type': signal.signal_type,
+                'entry_price': signal.entry_price,
+                'stop_loss': signal.stop_loss,
+                'take_profit': signal.take_profit,
+                'position_size': signal.position_size,
+                'confidence': signal.signal_strength.confidence,
+                'risk_reward_ratio': signal.risk_reward_ratio,
+                'reasoning': signal.reasoning,
+                'status': 'pending'  # pending, executed, expired
+            }
+            
+            # Add to local alerts list
+            self.trade_alerts.insert(0, alert)
+            
+            # Keep only the most recent alerts
+            if len(self.trade_alerts) > self.max_trade_alerts:
+                self.trade_alerts = self.trade_alerts[:self.max_trade_alerts]
+            
+            # Add to shared data store if available
+            try:
+                from shared_data_store import get_shared_store, TradeAlert
+                store = get_shared_store()
+                
+                shared_alert = TradeAlert(
+                    id=alert['id'],
+                    timestamp=alert['timestamp'],
+                    pair=alert['pair'],
+                    signal_type=alert['signal_type'],
+                    entry_price=alert['entry_price'],
+                    stop_loss=alert['stop_loss'],
+                    take_profit=alert['take_profit'],
+                    position_size=alert['position_size'],
+                    confidence=alert['confidence'],
+                    risk_reward_ratio=alert['risk_reward_ratio'],
+                    reasoning=alert['reasoning'],
+                    status=alert['status'],
+                    source_system='comprehensive_strategy'
+                )
+                
+                store.add_trade_alert(shared_alert)
+                
+                # Send message to other systems
+                store.send_message({
+                    'type': 'trade_alert',
+                    'alert': shared_alert,
+                    'source': 'comprehensive_strategy'
+                })
+                
+            except ImportError:
+                self.logger.logger.debug("Shared data store not available")
+            except Exception as e:
+                self.logger.logger.error(f"Error adding to shared data store: {e}")
+            
+            self.logger.logger.info(f"🚨 Trade Alert Added: {signal.signal_type} {signal.pair} @ {signal.entry_price}")
+            
+        except Exception as e:
+            self.logger.logger.error(f"Error adding trade alert: {e}")
+    
+    def get_trade_alerts(self) -> List[Dict]:
+        """Get current trade alerts for the dashboard."""
+        # Remove expired alerts (older than 1 hour)
+        current_time = datetime.now()
+        valid_alerts = []
+        
+        for alert in self.trade_alerts:
+            alert_time = datetime.fromisoformat(alert['timestamp'])
+            if (current_time - alert_time).total_seconds() < 3600:  # 1 hour
+                valid_alerts.append(alert)
+        
+        self.trade_alerts = valid_alerts
+        return self.trade_alerts
+    
+    def execute_trade_alert(self, alert_id: str) -> bool:
+        """Execute a trade alert."""
+        try:
+            for alert in self.trade_alerts:
+                if alert['id'] == alert_id and alert['status'] == 'pending':
+                    # Create signal from alert
+                    signal = ComprehensiveSignal(
+                        timestamp=datetime.fromisoformat(alert['timestamp']),
+                        pair=alert['pair'],
+                        signal_type=alert['signal_type'],
+                        entry_price=alert['entry_price'],
+                        stop_loss=alert['stop_loss'],
+                        take_profit=alert['take_profit'],
+                        position_size=alert['position_size'],
+                        signal_strength=SignalStrength(
+                            technical_score=0.7,
+                            fundamental_score=0.7,
+                            ai_score=0.7,
+                            pattern_score=0.7,
+                            overall_score=alert['confidence'],
+                            confidence=alert['confidence'],
+                            risk_level='medium'
+                        ),
+                        market_condition=MarketCondition(
+                            trend='bullish',
+                            volatility=0.5,
+                            momentum=0.5,
+                            strength=0.7,
+                            support_levels=[],
+                            resistance_levels=[],
+                            key_levels=[]
+                        ),
+                        reasoning=alert['reasoning'],
+                        risk_reward_ratio=alert['risk_reward_ratio'],
+                        expected_duration=timedelta(hours=4),
+                        source_analysis={}
+                    )
+                    
+                    # Execute the signal
+                    success = self._execute_signal(signal)
+                    
+                    if success:
+                        alert['status'] = 'executed'
+                        self.logger.logger.info(f"✅ Trade Alert Executed: {alert_id}")
+                        return True
+                    else:
+                        alert['status'] = 'failed'
+                        self.logger.logger.error(f"❌ Trade Alert Failed: {alert_id}")
+                        return False
+            
+            return False
+            
+        except Exception as e:
+            self.logger.logger.error(f"Error executing trade alert: {e}")
+            return False
 
 # Example usage
 if __name__ == "__main__":

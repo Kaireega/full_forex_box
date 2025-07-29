@@ -1,0 +1,2 @@
+2025-07-28 15:42:53 LogWrapper init() ./logs/CandleWorker_USD_JPY.log
+2025-07-28 15:42:53 Created CandleWorker for USD_JPY {'pair': 'USD_JPY', 'n_ma': 12, 'n_std': 2.0, 'maxspread': 0.04, 'mingain': 0.06, 'riskreward': 1.5, 'atr_multiplier': 2.0, 'atr_period': 14, 'rsi_period': 14, 'rsi_overbought': 70, 'rsi_oversold': 30}

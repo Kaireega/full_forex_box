@@ -1,0 +1,40 @@
+[
+  {
+    "timestamp": "2025-07-28T15:43:01.342687",
+    "currency_pair": "USD_JPY",
+    "signal_type": "BUY",
+    "confidence": 0.85,
+    "entry_price": 148.53,
+    "stop_loss": 148.46,
+    "take_profit": 148.7,
+    "reasoning": "The USD/JPY is in a strong uptrend with a trend strength of 0.90 and momentum positive at 0.15. Support strength is very strong at 1.00, indicating solid buying interest near current levels. Multi-timeframe RSI readings show strong momentum on the H1 (75.4) while shorter timeframes are neutral to slightly bullish, suggesting a minor pullback or consolidation before continuation. The breakout probability is moderate at 0.30, so waiting for a slight pullback entry near 148.530 aligns with trend-following strategy. Tight stop loss below recent support at 148.460 limits risk, while take profit at 148.700 captures continuation of the strong uptrend. Trailing stops should be used to lock in profits as price advances.",
+    "risk_level": "MEDIUM",
+    "mode": "adaptive",
+    "market_condition": "strong_trend_up",
+    "strategy_used": "trend_following",
+    "position_size_recommendation": 0.9694035447247985,
+    "time_horizon": "medium",
+    "profit_probability": 0.8125269627458507,
+    "alternative_entry": 148.52,
+    "trailing_stop": 148.58
+  },
+  {
+    "timestamp": "2025-07-28T15:43:07.258021",
+    "currency_pair": "GBP_USD",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "entry_price": 1.3348,
+    "stop_loss": 1.3325,
+    "take_profit": 1.34,
+    "reasoning": "The GBP/USD is in a weak uptrend with a trend strength of 0.50 and strong support at 1.33450-1.33500 area. Momentum and mean reversion signals are slightly negative, indicating a minor pullback within the uptrend. The breakout probability is high at 0.80, suggesting a likely continuation above resistance. Multi-timeframe RSI values are low, especially on H1 (23.1), indicating oversold conditions on higher timeframe and a good dip entry opportunity. Wider stops are used due to volatility and to avoid premature stop-outs. The take profit is set near the strong resistance at 1.34000 to capture upside while managing risk conservatively.",
+    "risk_level": "LOW",
+    "mode": "adaptive",
+    "market_condition": "weak_trend_up",
+    "strategy_used": "conservative",
+    "position_size_recommendation": 0.5184482145220459,
+    "time_horizon": "short",
+    "profit_probability": 0.41661481785444576,
+    "alternative_entry": 1.3335,
+    "trailing_stop": 1.3365
+  }
+]

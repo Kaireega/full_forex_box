@@ -123,6 +123,65 @@ def set_candle_patterns(df_an: pd.DataFrame):
     df_an['EVENING_STAR'] = df_an.apply(apply_morning_star, axis=1, direction=-1)
 
 def apply_patterns(df: pd.DataFrame):
-    df_an = apply_candle_props(df)
-    set_candle_patterns(df_an)
-    return df_an
+    """Apply all candlestick patterns to the dataframe."""
+    df = apply_candle_props(df)
+    df = set_candle_patterns(df)
+    return df
+
+# PatternRecognition class wrapper for compatibility
+class PatternRecognition:
+    """Wrapper class for pattern recognition to provide a consistent interface."""
+    
+    def __init__(self):
+        pass
+    
+    def identify_patterns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify all candlestick patterns."""
+        return apply_patterns(df)
+    
+    def identify_engulfing(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify engulfing patterns."""
+        df = apply_candle_props(df)
+        df['Engulfing'] = df.apply(apply_engulfing, axis=1)
+        return df
+    
+    def identify_doji(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify doji patterns."""
+        df = apply_candle_props(df)
+        df['Doji'] = df['body_perc'] < 10
+        return df
+    
+    def identify_hammer(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify hammer patterns."""
+        df = apply_candle_props(df)
+        df['Hammer'] = df.apply(apply_hanging_man, axis=1)
+        return df
+    
+    def identify_shooting_star(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify shooting star patterns."""
+        df = apply_candle_props(df)
+        df['Shooting_Star'] = df.apply(apply_shooting_star, axis=1)
+        return df
+    
+    def identify_morning_star(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify morning star patterns."""
+        df = apply_candle_props(df)
+        df['Morning_Star'] = df.apply(lambda row: apply_morning_star(row, direction=1), axis=1)
+        return df
+    
+    def identify_evening_star(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify evening star patterns."""
+        df = apply_candle_props(df)
+        df['Evening_Star'] = df.apply(lambda row: apply_morning_star(row, direction=-1), axis=1)
+        return df
+    
+    def identify_all_patterns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Identify all available patterns."""
+        df = self.identify_patterns(df)
+        df = self.identify_engulfing(df)
+        df = self.identify_doji(df)
+        df = self.identify_hammer(df)
+        df = self.identify_shooting_star(df)
+        df = self.identify_morning_star(df)
+        df = self.identify_evening_star(df)
+        return df

@@ -217,7 +217,7 @@ python setup.py --collect-data     # Start data collection
 
 After setup, you can access:
 
-- **Web Interface**: http://localhost:5000
+- **Web Interface**: http://localhost:5001
 - **Jupyter Notebooks**: `jupyter notebook analysis/`
 - **Logs**: `logs/setup_YYYYMMDD_HHMMSS.log`
 - **OpenAI Demo**: `python test_openai_analysis.py`
@@ -337,11 +337,11 @@ set OPENAI_API_KEY=your-api-key-here       # Windows
 - Verify your OANDA account is active
 - Check if you're using practice vs live API endpoints
 
-#### 3. "Port 5000 already in use"
+#### 3. "Port 5001 already in use"
 ```bash
-# Find and kill process using port 5000
-lsof -ti:5000 | xargs kill -9  # Linux/macOS
-netstat -ano | findstr :5000   # Windows (then use taskkill)
+# Find and kill process using port 5001
+lsof -ti:5001 | xargs kill -9  # Linux/macOS
+netstat -ano | findstr :5001   # Windows (then use taskkill)
 
 # Or use a different port
 python server.py --port 8000
@@ -398,7 +398,7 @@ python run_bot.py    # Trading bot
 
 After successful setup:
 
-1. **Explore the Web Interface**: Visit http://localhost:5000
+1. **Explore the Web Interface**: Visit http://localhost:5001
 2. **Try OpenAI Analysis**: Run `./start.sh openai-demo`
 3. **Open Jupyter Notebooks**: `jupyter notebook analysis/`
 4. **Configure Trading Parameters**: Edit trading bot settings

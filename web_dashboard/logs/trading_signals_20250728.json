@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-07-28T15:43:01.585770",
+    "currency_pair": "USD_JPY",
+    "signal_type": "HOLD",
+    "confidence": 0.65,
+    "entry_price": 148.536,
+    "stop_loss": 148.336,
+    "take_profit": 148.836,
+    "reasoning": "The USD/JPY is currently trading very close to its short-term moving averages (MA5, MA10, MA20) which are tightly clustered around 148.54, indicating a lack of clear directional momentum. The RSI at 53.45 is neutral, suggesting neither overbought nor oversold conditions. MACD is slightly positive but very close to zero, showing weak bullish momentum. Price is near the middle Bollinger Band and below resistance at 148.578, with support at 148.480. Recent price action shows mixed candles with no strong trend continuation or reversal signals in the last 10 minutes. Volatility is very low (0.00007), indicating a quiet market with limited price movement. Given these factors, immediate trading opportunities with high confidence (>70%) are not present. A HOLD recommendation is prudent until a clearer breakout above resistance or breakdown below support occurs, or momentum indicators strengthen. The suggested stop loss and take profit levels are based on a hypothetical trade with a 20 pip stop loss and 30 pip take profit to maintain a 1:1.5 risk/reward ratio if a trade is initiated later.",
+    "market_conditions": "Low volatility, range-bound price action near short-term moving averages, neutral momentum indicators, no clear trend direction",
+    "risk_level": "LOW"
+  },
+  {
+    "timestamp": "2025-07-28T15:43:09.415844",
+    "currency_pair": "GBP_USD",
+    "signal_type": "SELL",
+    "confidence": 0.75,
+    "entry_price": 1.33524,
+    "stop_loss": 1.33724,
+    "take_profit": 1.33374,
+    "reasoning": "The GBP/USD pair is showing bearish signals in the immediate short term. The price is slightly below all short-term moving averages (MA5=1.33528, MA10=1.33532, MA20=1.33540), indicating downward pressure. The RSI at 40 suggests weak momentum without being oversold, and the MACD is negative (-0.00042), confirming bearish momentum. Price is near the lower Bollinger Band (1.33516) but has not strongly bounced, indicating potential continuation of the downtrend. Recent candles show a slight downward bias with lower highs and lows. The support level at 1.33512 is close but not decisively broken yet, so a cautious sell entry near current price is justified. The stop loss is set 20 pips above entry to limit risk, just above resistance and moving averages, while take profit is set 23 pips below entry to maintain a favorable risk/reward ratio of approximately 1:1.5. Volatility is low (0.00013), so position sizing should be moderate to control risk. Overall, the market conditions favor a short-term sell trade with medium confidence.",
+    "market_conditions": "Sideways to mildly bearish with low volatility and weak bearish momentum",
+    "risk_level": "MEDIUM"
+  }
+]

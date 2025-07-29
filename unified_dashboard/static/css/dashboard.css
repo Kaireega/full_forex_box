@@ -922,4 +922,170 @@ body {
     .modal-footer {
         flex-direction: column;
     }
+}
+
+/* Trade Alerts Styles */
+.alerts-container {
+    padding: 1rem;
+}
+
+.alerts-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.alerts-header h3 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.alerts-header p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1rem;
+}
+
+.alerts-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.alert-item {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.alert-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.alert-item.pending {
+    border-left: 4px solid #f59e0b;
+}
+
+.alert-item.executed {
+    border-left: 4px solid #10b981;
+}
+
+.alert-item.failed {
+    border-left: 4px solid #ef4444;
+}
+
+.alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.alert-pair {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.alert-signal {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.alert-signal.buy {
+    background: rgba(16, 185, 129, 0.2);
+    color: #4ade80;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.alert-signal.sell {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.alert-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.alert-detail {
+    text-align: center;
+}
+
+.alert-detail-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.25rem;
+}
+
+.alert-detail-value {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.alert-reasoning {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+}
+
+.alert-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.execute-alert-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.execute-alert-btn:hover {
+    background: #059669;
+}
+
+.execute-alert-btn:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+}
+
+.alert-status {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.alert-status.pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.alert-status.executed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #4ade80;
+}
+
+.alert-status.failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
 } 

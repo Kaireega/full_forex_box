@@ -293,7 +293,7 @@ class ForexSystemSetup:
             self.log("Web server started ✅")
             if background:
                 time.sleep(2)  # Give server time to start
-                self.log("Web server should be available at http://localhost:5000")
+                self.log("Web server should be available at http://localhost:5001")
         
         return success
     
@@ -403,7 +403,7 @@ class ForexSystemSetup:
         self.log("=" * 60)
         
         status_items = [
-            ("Web Server", "http://localhost:5000"),
+            ("Web Server", "http://localhost:5001"),
             ("Trading Bot", "Running in background"),
             ("Data Streaming", "Active"),
             ("OpenAI Analysis", "Available" if os.getenv('OPENAI_API_KEY') else "Not configured"),

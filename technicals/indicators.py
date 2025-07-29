@@ -136,25 +136,61 @@ def ADX(df, period=14):
     return adx
 
 def identify_pin_bar(df: pd.DataFrame):
-
-    body_ratio=0.2
-    wick_ratio=0.6
-
-    total_range = df["mid_h"] - df["mid_l"]
-    body_size = abs(df["mid_c"] - df["mid_o"])
-    upper_wick = df["mid_h"] - df[["mid_c", "mid_o"]].max(axis=1)
-    lower_wick = df[["mid_c", "mid_o"]].min(axis=1) - df["mid_l"]
-
-    df["PIN_BAR_BULL"] = (
-        (df["mid_c"] > df["mid_o"]) &  # Bullish body
-        ((body_size / total_range) < body_ratio) &  # Smaller body relative to total range
-        ((lower_wick / total_range) > wick_ratio)  # Lower wick must be dominant
-    )
-
-    df["PIN_BAR_BEAR"] = (
-        (df["mid_o"] > df["mid_c"]) &  # Bearish body
-        ((body_size / total_range) < body_ratio) &  # Smaller body relative to total range
-        ((upper_wick / total_range) > wick_ratio)  # Upper wick must be dominant
+    """Identify pin bar patterns."""
+    df['Pin_Bar'] = np.where(
+        (df.mid_h - df.mid_l) > 3 * abs(df.mid_c - df.mid_o) &
+        (df.mid_h - df.mid_l) > 2 * (df.mid_h - df.mid_c) &
+        (df.mid_h - df.mid_l) > 2 * (df.mid_o - df.mid_l),
+        'Pin_Bar', None
     )
     return df
+
+# TechnicalIndicators class wrapper for compatibility
+class TechnicalIndicators:
+    """Wrapper class for technical indicators to provide a consistent interface."""
+    
+    def __init__(self):
+        pass
+    
+    def calculate_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+        """Calculate RSI indicator."""
+        return RSI(df, n=period)
+    
+    def calculate_macd(self, df: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
+        """Calculate MACD indicator."""
+        return MACD(df, n_fast=fast, n_slow=slow, n_signal=signal)
+    
+    def calculate_bollinger_bands(self, df: pd.DataFrame, period: int = 20, std_dev: int = 2) -> pd.DataFrame:
+        """Calculate Bollinger Bands."""
+        return BollingerBands(df, n=period, s=std_dev)
+    
+    def calculate_atr(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+        """Calculate Average True Range."""
+        return ATR(df, n=period)
+    
+    def calculate_ema(self, df: pd.DataFrame, period: int, column: str = 'mid_c') -> pd.DataFrame:
+        """Calculate Exponential Moving Average."""
+        df[f'EMA_{period}'] = EMA(df, period, column)
+        return df
+    
+    def calculate_moving_average_crossover(self, df: pd.DataFrame, short_window: int = 20, long_window: int = 60) -> pd.DataFrame:
+        """Calculate Moving Average Crossover."""
+        return moving_average_crossover(df, short_window, long_window)
+    
+    def calculate_stochastic(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+        """Calculate Stochastic Oscillator."""
+        df['Stochastic'] = (df.mid_c - df.mid_l.rolling(period).min()) / (df.mid_h.rolling(period).max() - df.mid_l.rolling(period).min()) * 100
+        return df
+    
+    def calculate_all_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate all basic technical indicators."""
+        df = self.calculate_rsi(df)
+        df = self.calculate_macd(df)
+        df = self.calculate_bollinger_bands(df)
+        df = self.calculate_atr(df)
+        df = self.calculate_ema(df, 20)
+        df = self.calculate_ema(df, 50)
+        df = self.calculate_ema(df, 200)
+        df = self.calculate_stochastic(df)
+        return df
 

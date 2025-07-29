@@ -448,6 +448,73 @@ def place_trade():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+# ============================================================================
+# TRADE ALERTS ENDPOINTS
+# ============================================================================
+
+@app.route('/api/alerts')
+def get_trade_alerts():
+    """Get current trade alerts from shared data store."""
+    try:
+        # Try to get alerts from shared data store first
+        try:
+            from shared_data_store import get_shared_store
+            store = get_shared_store()
+            alerts = store.get_trade_alerts()
+            
+            # Convert to dict format for JSON serialization
+            alerts_dict = []
+            for alert in alerts:
+                alerts_dict.append({
+                    'id': alert.id,
+                    'timestamp': alert.timestamp,
+                    'pair': alert.pair,
+                    'signal_type': alert.signal_type,
+                    'entry_price': alert.entry_price,
+                    'stop_loss': alert.stop_loss,
+                    'take_profit': alert.take_profit,
+                    'position_size': alert.position_size,
+                    'confidence': alert.confidence,
+                    'risk_reward_ratio': alert.risk_reward_ratio,
+                    'reasoning': alert.reasoning,
+                    'status': alert.status,
+                    'source_system': alert.source_system
+                })
+            
+            return jsonify({'alerts': alerts_dict})
+            
+        except ImportError:
+            # Fallback to comprehensive trading strategy
+            from analysis.comprehensive_trading_strategy import ComprehensiveTradingStrategy
+            
+            # Initialize strategy if not already done
+            if not hasattr(app, 'trading_strategy'):
+                app.trading_strategy = ComprehensiveTradingStrategy()
+            
+            alerts = app.trading_strategy.get_trade_alerts()
+            return jsonify({'alerts': alerts})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/alerts/<alert_id>/execute', methods=['POST'])
+def execute_trade_alert(alert_id):
+    """Execute a trade alert."""
+    try:
+        # Get strategy instance
+        if not hasattr(app, 'trading_strategy'):
+            app.trading_strategy = ComprehensiveTradingStrategy()
+        
+        success = app.trading_strategy.execute_trade_alert(alert_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': f'Trade alert {alert_id} executed successfully'})
+        else:
+            return jsonify({'success': False, 'error': f'Failed to execute trade alert {alert_id}'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/trade/close/<trade_id>', methods=['POST'])
 def close_trade(trade_id):
     """Close an existing trade."""
@@ -508,6 +575,62 @@ def get_positions():
         else:
             return jsonify({'positions': []})
             
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/system-status')
+def get_system_status():
+    """Get status of all trading systems."""
+    try:
+        # Try to get status from shared data store
+        try:
+            from shared_data_store import get_shared_store
+            store = get_shared_store()
+            system_statuses = store.get_all_system_statuses()
+            
+            # Convert to dict format for JSON serialization
+            status_dict = {}
+            for name, status in system_statuses.items():
+                status_dict[name] = {
+                    'system_name': status.system_name,
+                    'status': status.status,
+                    'last_update': status.last_update,
+                    'active_positions': status.active_positions,
+                    'total_signals': status.total_signals,
+                    'performance_metrics': status.performance_metrics
+                }
+            
+            # Add summary
+            summary = store.get_summary()
+            
+            return jsonify({
+                'systems': status_dict,
+                'summary': summary
+            })
+            
+        except ImportError:
+            # Fallback to basic status check
+            return jsonify({
+                'systems': {
+                    'unified_dashboard': {
+                        'system_name': 'unified_dashboard',
+                        'status': 'running',
+                        'last_update': datetime.now().isoformat(),
+                        'active_positions': 0,
+                        'total_signals': 0,
+                        'performance_metrics': {}
+                    }
+                },
+                'summary': {
+                    'trade_alerts_count': 0,
+                    'pending_alerts_count': 0,
+                    'market_data_pairs': [],
+                    'active_systems': 1,
+                    'total_signals': 0,
+                    'last_updated': datetime.now().isoformat()
+                }
+            })
+        
     except Exception as e:
         return jsonify({'error': str(e)})
 

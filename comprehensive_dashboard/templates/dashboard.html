@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Trading Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>Forex Trading Dashboard</h1>
+            <p>Professional Real-time Trading System with Advanced Analytics & AI-Powered Insights</p>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="system-status"></div>
+                <span id="system-status-text">System Status</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="stream-bot-status"></div>
+                <span id="stream-bot-status-text">Stream Bot</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="analysis-status"></div>
+                <span id="analysis-status-text">AI Analysis</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="data-streaming-status"></div>
+                <span id="data-streaming-status-text">Data Streaming</span>
+            </div>
+            <div class="status-item">
+                <span id="current-time">--:--:--</span>
+            </div>
+            <div class="status-item">
+                <span id="last-update">Last Update: --</span>
+            </div>
+        </div>
+        
+        <!-- Main Navigation - Based on Flowchart -->
+        <div class="main-nav">
+            <div class="nav-section">
+                <h2>📊 Analysis</h2>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="showSection('chart-info')">Chart Info</button>
+                    <button class="nav-btn" onclick="showSection('ai-analysis')">ChatGPT API Analysis</button>
+                    <button class="nav-btn" onclick="showSection('technical-analysis')">Technical Analysis</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h2>💰 Account Information</h2>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="showSection('account-data')">Display Account Data</button>
+                    <button class="nav-btn" onclick="showSection('trade-execution')">Enter/Edit/Exit Trade</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Controls -->
+        <div class="controls">
+            <button class="btn" onclick="startSystem()" id="start-btn">
+                <span id="start-btn-text">Start System</span>
+                <span class="loading" id="start-loading" style="display: none;"></span>
+            </button>
+            <button class="btn btn-stop" onclick="stopSystem()" id="stop-btn" disabled>
+                <span id="stop-btn-text">Stop System</span>
+                <span class="loading" id="stop-loading" style="display: none;"></span>
+            </button>
+            <button class="btn" onclick="refreshData()" id="refresh-btn">
+                <span id="refresh-btn-text">Refresh Data</span>
+                <span class="loading" id="refresh-loading" style="display: none;"></span>
+            </button>
+        </div>
+        
+        <!-- Content Sections -->
+        <div class="content-area">
+            <!-- Chart Info Section -->
+            <div id="chart-info-section" class="content-section active">
+                <h3>📈 Chart Information</h3>
+                <div class="chart-controls">
+                    <div class="control-group">
+                        <label for="chart-pair">Currency Pair:</label>
+                        <select id="chart-pair" onchange="loadChartData()">
+                            <option value="EUR_USD">EUR/USD</option>
+                            <option value="GBP_USD">GBP/USD</option>
+                            <option value="USD_JPY">USD/JPY</option>
+                            <option value="USD_CHF">USD/CHF</option>
+                            <option value="AUD_USD">AUD/USD</option>
+                            <option value="USD_CAD">USD/CAD</option>
+                            <option value="NZD_USD">NZD/USD</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="chart-timeframe">Timeframe:</label>
+                        <select id="chart-timeframe" onchange="loadChartData()">
+                            <option value="M1">1 Minute</option>
+                            <option value="M5">5 Minutes</option>
+                            <option value="M15" selected>15 Minutes</option>
+                            <option value="M30">30 Minutes</option>
+                            <option value="H1">1 Hour</option>
+                            <option value="H4">4 Hours</option>
+                            <option value="D">Daily</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="chart-count">Candles:</label>
+                        <select id="chart-count" onchange="loadChartData()">
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="price-chart"></canvas>
+                </div>
+                
+                <div class="chart-info">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Current Price:</span>
+                            <span class="info-value" id="current-price">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Change:</span>
+                            <span class="info-value" id="price-change">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">High:</span>
+                            <span class="info-value" id="price-high">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Low:</span>
+                            <span class="info-value" id="price-low">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis Section -->
+            <div id="ai-analysis-section" class="content-section">
+                <h3>🤖 ChatGPT API Analysis</h3>
+                <div class="ai-controls">
+                    <div class="control-group">
+                        <label for="ai-pair">Currency Pair:</label>
+                        <select id="ai-pair" onchange="loadAIAnalysis()">
+                            <option value="EUR_USD">EUR/USD</option>
+                            <option value="GBP_USD">GBP/USD</option>
+                            <option value="USD_JPY">USD/JPY</option>
+                            <option value="USD_CHF">USD/CHF</option>
+                            <option value="AUD_USD">AUD/USD</option>
+                            <option value="USD_CAD">USD/CAD</option>
+                            <option value="NZD_USD">NZD/USD</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="loadAIAnalysis()">Analyze with AI</button>
+                </div>
+                
+                <div class="ai-analysis-results">
+                    <div class="analysis-panel">
+                        <h4>Market Analysis</h4>
+                        <div id="ai-market-analysis">
+                            <p style="opacity: 0.7;">Select a pair and click "Analyze with AI" to get AI-powered market insights.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-panel">
+                        <h4>Trading Recommendation</h4>
+                        <div id="ai-recommendation">
+                            <p style="opacity: 0.7;">AI trading recommendation will appear here.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-panel">
+                        <h4>Risk Assessment</h4>
+                        <div id="ai-risk-assessment">
+                            <p style="opacity: 0.7;">AI risk assessment will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Technical Analysis Section -->
+            <div id="technical-analysis-section" class="content-section">
+                <h3>📊 Technical Analysis</h3>
+                <div class="tech-controls">
+                    <div class="control-group">
+                        <label for="tech-pair">Currency Pair:</label>
+                        <select id="tech-pair" onchange="loadTechnicalData()">
+                            <option value="EUR_USD">EUR/USD</option>
+                            <option value="GBP_USD">GBP/USD</option>
+                            <option value="USD_JPY">USD/JPY</option>
+                            <option value="USD_CHF">USD/CHF</option>
+                            <option value="AUD_USD">AUD/USD</option>
+                            <option value="USD_CAD">USD/CAD</option>
+                            <option value="NZD_USD">NZD/USD</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="tech-timeframe">Timeframe:</label>
+                        <select id="tech-timeframe" onchange="loadTechnicalData()">
+                            <option value="M15" selected>15 Minutes</option>
+                            <option value="H1">1 Hour</option>
+                            <option value="H4">4 Hours</option>
+                            <option value="D">Daily</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="loadTechnicalData()">Update Analysis</button>
+                </div>
+                
+                <div class="technical-grid">
+                    <div class="tech-panel">
+                        <h4>Momentum Indicators</h4>
+                        <div id="momentum-indicators">
+                            <p style="opacity: 0.7;">Loading momentum indicators...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-panel">
+                        <h4>Trend Indicators</h4>
+                        <div id="trend-indicators">
+                            <p style="opacity: 0.7;">Loading trend indicators...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-panel">
+                        <h4>Volatility Indicators</h4>
+                        <div id="volatility-indicators">
+                            <p style="opacity: 0.7;">Loading volatility indicators...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-panel">
+                        <h4>Candlestick Patterns</h4>
+                        <div id="candlestick-patterns">
+                            <p style="opacity: 0.7;">Loading candlestick patterns...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Data Section -->
+            <div id="account-data-section" class="content-section">
+                <h3>💰 Account Information</h3>
+                <div class="account-summary">
+                    <div class="account-grid">
+                        <div class="account-item">
+                            <div class="account-value" id="account-balance">--</div>
+                            <div class="account-label">Balance</div>
+                        </div>
+                        <div class="account-item">
+                            <div class="account-value" id="account-equity">--</div>
+                            <div class="account-label">Equity</div>
+                        </div>
+                        <div class="account-item">
+                            <div class="account-value" id="account-pnl">--</div>
+                            <div class="account-label">P&L</div>
+                        </div>
+                        <div class="account-item">
+                            <div class="account-value" id="account-margin">--</div>
+                            <div class="account-label">Margin Used</div>
+                        </div>
+                        <div class="account-item">
+                            <div class="account-value" id="open-positions">--</div>
+                            <div class="account-label">Open Positions</div>
+                        </div>
+                        <div class="account-item">
+                            <div class="account-value" id="open-trades">--</div>
+                            <div class="account-label">Open Trades</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="account-details">
+                    <div class="detail-section">
+                        <h4>Open Positions</h4>
+                        <div id="positions-list">
+                            <p style="opacity: 0.7;">Loading positions...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>Open Trades</h4>
+                        <div id="trades-list">
+                            <p style="opacity: 0.7;">Loading trades...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trade Execution Section -->
+            <div id="trade-execution-section" class="content-section">
+                <h3>💼 Trade Execution</h3>
+                <div class="trade-execution-container">
+                    <!-- Place New Trade Form -->
+                    <div class="trade-section">
+                        <h4>Place New Trade</h4>
+                        <form class="trade-form" id="place-trade-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="trade-pair">Currency Pair:</label>
+                                    <select id="trade-pair" required>
+                                        <option value="">Select Pair</option>
+                                        <option value="EUR_USD">EUR/USD</option>
+                                        <option value="GBP_USD">GBP/USD</option>
+                                        <option value="USD_JPY">USD/JPY</option>
+                                        <option value="USD_CHF">USD/CHF</option>
+                                        <option value="AUD_USD">AUD/USD</option>
+                                        <option value="USD_CAD">USD/CAD</option>
+                                        <option value="NZD_USD">NZD/USD</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-direction">Direction:</label>
+                                    <select id="trade-direction" required>
+                                        <option value="">Select Direction</option>
+                                        <option value="buy">Buy</option>
+                                        <option value="sell">Sell</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="trade-units">Units:</label>
+                                    <input type="number" id="trade-units" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-stop-loss">Stop Loss:</label>
+                                    <input type="number" id="trade-stop-loss" step="0.00001">
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-take-profit">Take Profit:</label>
+                                    <input type="number" id="trade-take-profit" step="0.00001">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn">Place Trade</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Trade Alerts -->
+                    <div class="trade-section">
+                        <h4>Trade Alerts</h4>
+                        <div id="trade-alerts">
+                            <p style="opacity: 0.7;">Loading trade alerts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Forex Trading Platform | Professional Real-time Trading System</p>
+            <p>AI predictions are for informational purposes only. Always conduct your own analysis.</p>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 
