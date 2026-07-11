@@ -1,0 +1,8 @@
+logs/
+*.log
+__pycache__/
+.unified_dashboard.pid
+.env
+.venv/
+venv/
+.DS_Store

@@ -1,6 +1,8 @@
-API_KEY = "REDACTED_OANDA_API_KEY"
-ACCOUNT_ID = "101-001-23541205-001"
-OANDA_URL = 'https://api-fxpractice.oanda.com/v3'
+import os
+
+API_KEY = os.environ.get("OANDA_API_KEY", "")
+ACCOUNT_ID = os.environ.get("OANDA_ACCOUNT_ID", "")
+OANDA_URL = os.environ.get("OANDA_URL", "https://api-fxpractice.oanda.com/v3")
 
 SECURE_HEADER = {
     "Authorization": f"Bearer {API_KEY}",
@@ -11,7 +13,7 @@ SELL = -1
 BUY = 1
 NONE = 0
 
-MONGO_CONN_STR = "mongodb+srv://REDACTED:REDACTED@cluster0.m5p8n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_CONN_STR = os.environ.get("MONGODB_URI", "")
 INVESTING_COM_PAIRS = {
    "EUR_USD":{
       "pair":"EUR_USD",
